@@ -149,10 +149,13 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Next step
 
-1. User tries maps on https://solforio.github.io/dnd_app/ (personal, then a party map with a friend).
-2. Then Phase 5 (notes), unless the user asks otherwise.
+1. The 3D die that matches the dice rolled (see Backlog). Then:
+2. User tries maps on https://solforio.github.io/dnd_app/ (personal, then a party map with a friend).
+3. Then Phase 5 (notes), unless the user asks otherwise.
 
 ## Backlog (user requests, 2026-10-13)
+
+- **3D die matches the dice rolled (requested 2026-10-14, next to do)**: the 3D animation should show the die that was rolled (d4, d6, d8, d10, d12, d20, d100) instead of always a d20. With several kinds of dice in one roll, use the **first kind chosen** (the first dice term of the formula). Today `Die3D` + `d20geometry.ts` draw only an icosahedron: add the other solids (tetrahedron, cube, octahedron, pentagonal trapezohedron for d10/d100, dodecahedron), keep the total on the front face, and keep reduced motion and the natural-d20 face logic.
 
 Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (done), 3) Phase 4 inventory (done), 4) maps (done).
 
