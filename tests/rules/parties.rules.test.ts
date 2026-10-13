@@ -35,7 +35,8 @@ beforeEach(async () => {
   await env.clearFirestore();
 });
 
-const as = (uid: string): Firestore => env.authenticatedContext(uid, { email: `${uid}@dnd.local` }).firestore();
+// The test context returns the compat type; the modular functions accept it at runtime.
+const as = (uid: string) => env.authenticatedContext(uid, { email: `${uid}@dnd.local` }).firestore() as unknown as Firestore;
 const T = 1_700_000_000_000;
 const CODE = 'ABCDEFGH';
 const sharing = { hp: 'status', fields: { conditions: true } };
