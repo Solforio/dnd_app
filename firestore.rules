@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Phase 1: every user reads and writes only their own data. Everything else is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      function validUser(data) {
+        return data.keys().hasOnly(['schemaVersion', 'username', 'activeCharacterId', 'createdAt'])
+          && data.schemaVersion is int
+          && data.username is string
+          && (data.activeCharacterId == null || data.activeCharacterId is string)
+          && data.createdAt is int;
+      }
+
+      allow read, delete: if isOwner(uid);
+      // The username must match the synthetic sign-in email, so nobody can claim another name.
+      allow create: if isOwner(uid)
+        && validUser(request.resource.data)
+        && request.auth.token.email == request.resource.data.username + '@dnd.local';
+      allow update: if isOwner(uid)
+        && validUser(request.resource.data)
+        && request.resource.data.username == resource.data.username
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      match /characters/{characterId} {
+        function validCharacter(data) {
+          return data.id == characterId
+            && data.schemaVersion is int
+            && data.name is string
+            && data.updatedAt is int;
+        }
+
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validCharacter(request.resource.data);
+      }
+    }
+  }
+}
