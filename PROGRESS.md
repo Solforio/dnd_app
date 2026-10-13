@@ -91,3 +91,8 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 1. User tries Phase 2 on https://solforio.github.io/dnd_app/ (sheet, multiple characters, account sync).
 2. Phase 3: parties (brief section 6). Write the plan first (Firestore layout, rules, join flow, quota estimate) and wait for approval: it changes the rules.
+
+## Backlog (user requests, 2026-10-13)
+
+- **Dice animation**: the user wants a real rolling-die animation (today there is only the short tumble of the SVG d20). Ask what they picture before building it; respect `prefers-reduced-motion`.
+- **HP on the Tiri page on phones**: HP are below the dice and need scrolling. Make them visible without scrolling (e.g. a compact HP bar near the top on small screens).
