@@ -7,7 +7,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | Phase | State |
 |---|---|
 | 0: scaffold + module 1 (dice, HP, history) | **done**, published at https://solforio.github.io/dnd_app/ (repo Solforio/dnd_app) |
-| 1: accounts and cloud save | not started |
+| 1: accounts and cloud save | **code written**, waiting for Java (emulator) and the Firebase project to verify |
 | 2: character sheet | not started |
 | 3: parties | not started |
 | 4+: inventory, notes, codex, maps, PWA | not started |
@@ -37,10 +37,29 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 - **Router**: `HashRouter` (react-router) is postponed until there is a second screen (Phase 1), to avoid a dependency with no use yet.
 - **Inventory (Phase 4, agreed with the user)**: weights are **always stored in pounds**; the UI shows and edits in kg or lb, kg by default, using the Italian Player's Handbook conversion **1 lb = 0.5 kg**. Capacity = STR × an editable coefficient (`capacityPerStrLb`, default 15, range 1 to 50, step 0.5, "Ripristina 15 lb" button), shown in the chosen unit (15 lb = 7.5 kg). The variant encumbrance thresholds are 1/3 and 2/3 of the capacity. Planned shape: `inventorySettings { weightUnit: 'kg'|'lb', capacityPerStrLb, variantEncumbrance }` in the character, with schemaVersion +1 and a migration.
 
+## Phase 1: what exists
+
+- `src/domain/account.ts`: username rules (3 to 20 chars, a-z 0-9 _ -, lowercased), synthetic email `<username>@dnd.local`, `UserDoc`.
+- `src/domain/sync.ts`: `deriveSyncStatus`, `planUpload` (fresh / identical / conflicts), `isUntouchedDefault`, `createDebouncedWriter`.
+- `src/data/firebase.ts` (+ `firebaseConfig.ts`, still `null` until the real project exists; with `null` the app is local-only), `auth.ts`, `characterRepo.ts`, `session.ts` (orchestrates local vs cloud workspace, saving, upload, sign-out, refresh on tab focus).
+- `characterStore.ts` no longer persists anything: it bumps `revision` on user changes and `session.ts` saves.
+- UI: `#/accedi` (SignInPage), AccountBar + SyncBadge in the header, UploadDialog after login.
+- `firestore.rules` + `tests/rules/` (run with `npm run test:rules`, also in CI with Java 21).
+
+## Phase 1 decisions
+
+- **Password**: no app-side rules (user's choice). Firebase's own minimum of 6 characters still applies and is the only message shown.
+- **Local mode stays**: logged out = browser workspace; logged in = account workspace. Separate; login and logout never overwrite either.
+- **Upload offer** after login when the device has characters that are not the untouched default: fresh ones are uploaded, conflicts (same id, different content) are chosen one by one; "Non ora" asks again next login, "Non chiedere più" stores `dnd-companion:upload-dismissed:<uid>`.
+- **Cloud saving**: whole character with `setDoc`, 1.5 s debounce, flushed on hide/pagehide; last write wins. No realtime listener on own characters: one read at login, one re-read of the active character when the tab becomes visible (applied only if newer and no local edits happened meanwhile).
+- **activeCharacterId** lives in `users/{uid}`, written only when the active character changes.
+- **Sign-out** flushes and waits (max 5 s) for pending writes; if offline with unsynced writes it asks first.
+- **Quota estimate** (party of 6, ~4 h session): ~160 reads, ~600 to 900 writes. Well under 5% of the Spark daily limits.
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
-Coming in Phase 1: firebase, react-router-dom, firebase-tools (emulator). Ask before adding anything else.
+Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Ask before adding anything else.
 
 ## Open questions
 
@@ -48,5 +67,5 @@ Coming in Phase 1: firebase, react-router-dom, firebase-tools (emulator). Ask be
 
 ## Next step
 
-1. User checks Phase 0 on the live site (done: Pages from GitHub Actions, first deploy green).
-2. Phase 1: plan (Firebase checklist, rules, repositories, sync status) to approve before writing code.
+1. User installs Java 21, then: `npm run test:rules` and a manual run with `npm run emulators` + `npm run dev:emu` (also verifies that `@dnd.local` emails are accepted).
+2. User creates the Firebase project (Spark, no billing), following the checklist in the Phase 1 plan; paste the web config into `src/data/firebaseConfig.ts`; publish `firestore.rules`; add `solforio.github.io` to the authorized domains.

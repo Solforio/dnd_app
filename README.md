@@ -6,6 +6,7 @@ Il brief completo è in `cowork-prompt-dnd-app.md`, lo stato del lavoro in `PROG
 ## Requisiti
 
 - Node.js 24 (o almeno 20.19) e npm
+- Java 21, solo per gli emulatori Firebase: `winget install EclipseAdoptium.Temurin.21.JDK`
 
 ## Comandi
 
@@ -18,6 +19,16 @@ npm run lint       # controllo dello stile del codice
 npm run build      # build di produzione in dist/
 npm run preview    # serve la build di dist/ in locale
 ```
+
+### Con gli emulatori Firebase (account e salvataggio senza toccare il progetto vero)
+
+```sh
+npm run emulators  # terminale 1: Auth e Firestore in locale, interfaccia su http://localhost:4000
+npm run dev:emu    # terminale 2: l'app collegata agli emulatori
+npm run test:rules # test delle regole di sicurezza (avvia e chiude da solo l'emulatore)
+```
+
+Gli emulatori usano il progetto `demo-dnd`: un id che inizia con "demo-" non raggiunge mai i server veri.
 
 Per provare la build esattamente come su GitHub Pages (servita sotto `/<nome-repo>/`):
 
