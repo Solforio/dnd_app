@@ -1319,3 +1319,53 @@ textarea {
     padding: 0 var(--space-3);
   }
 }
+
+/* --- Quick HP (phones, Tiri page) --- */
+
+.hp-quick {
+  display: none;
+}
+
+@media (max-width: 859px) {
+  .hp-quick {
+    display: grid;
+    gap: var(--space-2);
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--surface2);
+    border-radius: var(--radius);
+  }
+}
+
+.hp-quick-top {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hp-quick-numbers {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hp-quick-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 4.5em) 1fr 1fr auto;
+  gap: var(--space-2);
+}
+
+.hp-quick-actions input {
+  width: 100%;
+}
+
+.hp-quick-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -115,5 +115,9 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Backlog (user requests, 2026-10-13)
 
-- **Dice animation**: the user wants a real rolling-die animation (today there is only the short tumble of the SVG d20). Ask what they picture before building it; respect `prefers-reduced-motion`.
+Order chosen by the user: 1) HP visible on phones, 2) 3D dice animation, 3) Phase 4 inventory, 4) maps.
+
+- **Maps (requested early)**: interactive Faerûn map with city sub-maps, clickable; pins on a personal map and on a shared party map. Constraints: no WotC map images in the repo (user loads their own image, kept in the browser, or a fan map with a compatible licence); no Cloud Storage (needs Blaze), so a shared map image cannot be uploaded: pins are shared through Firestore with coordinates relative to the image, each member loads the same image locally. Plan with a quota estimate before building.
+
+- **Dice animation**: the user chose a **3D die** (rolling d20). Respect `prefers-reduced-motion`.
 - **HP on the Tiri page on phones**: HP are below the dice and need scrolling. Make them visible without scrolling (e.g. a compact HP bar near the top on small screens).

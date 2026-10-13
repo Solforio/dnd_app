@@ -15,6 +15,7 @@ import { History } from './features/dice/History';
 import { ModeSelector } from './features/dice/ModeSelector';
 import { Presets } from './features/dice/Presets';
 import { HpPanel } from './features/hp/HpPanel';
+import { HpQuick } from './features/hp/HpQuick';
 import { PartiesPage } from './features/party/PartiesPage';
 import { PartyPage } from './features/party/PartyPage';
 import { SheetPage } from './features/sheet/SheetPage';
@@ -26,6 +27,7 @@ function Home() {
 
   return (
     <main className="app-main">
+      <HpQuick />
       <div className="column">
         <section className="card stack" aria-label="Risultato">
           <D20Result roll={lastRoll} />
