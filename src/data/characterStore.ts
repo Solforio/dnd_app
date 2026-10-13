@@ -12,7 +12,7 @@ import { parseFormula } from '../domain/dice/parser';
 import { cryptoDie } from '../domain/dice/rng';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
-import type { Sheet } from '../domain/sheet/sheet';
+import { longRestSheet, shortRest, type RestResult, type Sheet } from '../domain/sheet/sheet';
 import {
   addAndSelect,
   duplicate,
@@ -55,6 +55,7 @@ interface CharacterStore {
   heal: (amount: number) => void;
   gainTemp: (amount: number) => void;
   longRest: () => void;
+  shortRest: () => void;
   editHp: (patch: Partial<hpRules.Hp>) => void;
   setDeathSaves: (saves: { successes: number; failures: number }) => void;
   rollDeathSave: () => void;
@@ -69,6 +70,10 @@ interface CharacterStore {
 
   /** Shows a workspace loaded from storage. Not a user change: nothing is saved. */
   showWorkspace: (characters: Character[], activeId: string | null) => void;
+}
+
+function restoredText(r: RestResult): string {
+  return r.restored.length > 0 ? ` Usi recuperati: ${r.restored.join(', ')}.` : '';
 }
 
 function touch(c: Character, patch: Partial<Character>): Character {
@@ -158,7 +163,20 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     damage: (n) => applyVitals(hpRules.applyDamage(vitals(), n)),
     heal: (n) => applyVitals(hpRules.applyHealing(vitals(), n)),
     gainTemp: (n) => applyVitals(hpRules.gainTempHp(vitals(), n)),
-    longRest: () => applyVitals(hpRules.longRest(vitals())),
+    longRest: () => {
+      const change = hpRules.longRest(vitals());
+      const rest = longRestSheet(get().character.sheet);
+      const exhaustion = rest.sheet.exhaustion < get().character.sheet.exhaustion ? ' Un livello di indebolimento in meno.' : '';
+      applyVitals({ ...change, message: change.message + restoredText(rest) + exhaustion }, { sheet: rest.sheet });
+    },
+    shortRest: () => {
+      const rest = shortRest(get().character.sheet);
+      set((s) => ({
+        character: touch(s.character, { sheet: rest.sheet }),
+        revision: s.revision + 1,
+        hpStatus: 'Riposo breve.' + (rest.restored.length > 0 ? restoredText(rest) : ' Nessuna capacità da recuperare.'),
+      }));
+    },
     editHp: (patch) => applyVitals(hpRules.editHp(vitals(), patch)),
     setDeathSaves: (saves) => applyVitals(hpRules.setDeathSaves(vitals(), saves)),
     rollDeathSave: () => {

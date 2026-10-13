@@ -1,0 +1,169 @@
+import type { ReactNode } from 'react';
+import { Link } from 'react-router';
+import { NumberField } from '../../components/NumberField';
+import { TextField } from '../../components/TextField';
+import { useCharacterStore } from '../../data/characterStore';
+import { d20Formula, initiative, passivePerception, sheetProficiency, SHEET_LIMITS, totalLevel } from '../../domain/sheet/sheet';
+import { LEVEL_MAX } from '../../domain/sheet/rules';
+import { formatNumber, formatSigned } from '../../domain/format/number';
+import { editSheet, rollFrom, useSheet } from './sheetHooks';
+
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="stat">
+      <span className="label">{label}</span>
+      <span className="stat-value">{children}</span>
+    </div>
+  );
+}
+
+/** Name, race, classes and the headline numbers (proficiency, AC, initiative, speed, passive Perception). */
+export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onToggleEdit: () => void }) {
+  const name = useCharacterStore((s) => s.character.name);
+  const hp = useCharacterStore((s) => s.character.hp);
+  const rename = useCharacterStore((s) => s.rename);
+  const s = useSheet();
+  const init = initiative(s);
+
+  const subtitle = [
+    s.race,
+    s.classes
+      .filter((c) => c.name.trim())
+      .map((c) => `${c.name.trim()}${c.subclass.trim() ? ` (${c.subclass.trim()})` : ''} ${c.level}`)
+      .join(' / ') || `Livello ${formatNumber(totalLevel(s.classes))}`,
+    s.background,
+    s.alignment,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <section className="card stack span-all" aria-labelledby="sheet-name">
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h2 id="sheet-name" style={{ margin: 0 }}>
+            {name || 'Senza nome'}
+          </h2>
+          <p className="small muted">{subtitle}</p>
+        </div>
+        <button type="button" className={editing ? 'primary' : undefined} aria-pressed={editing} onClick={onToggleEdit}>
+          {editing ? 'Fine modifiche' : 'Modifica la scheda'}
+        </button>
+      </div>
+
+      {editing && (
+        <div className="stack">
+          <div className="form-grid">
+            <TextField label="Nome" value={name} maxLength={80} onChange={rename} />
+            <TextField label="Razza" value={s.race} maxLength={60} onChange={(race) => editSheet((x) => ({ ...x, race }))} />
+            <TextField
+              label="Background"
+              value={s.background}
+              maxLength={60}
+              onChange={(background) => editSheet((x) => ({ ...x, background }))}
+            />
+            <TextField
+              label="Allineamento"
+              value={s.alignment}
+              maxLength={40}
+              onChange={(alignment) => editSheet((x) => ({ ...x, alignment }))}
+            />
+          </div>
+          <fieldset className="plain stack">
+            <legend className="label">Classi</legend>
+            {s.classes.map((c, i) => {
+              const setClass = (patch: Partial<typeof c>) =>
+                editSheet((x) => ({ ...x, classes: x.classes.map((k, j) => (j === i ? { ...k, ...patch } : k)) }));
+              return (
+                <div className="row class-row" key={i}>
+                  <TextField label="Classe" value={c.name} maxLength={40} onChange={(name) => setClass({ name })} />
+                  <TextField label="Sottoclasse" value={c.subclass} maxLength={60} onChange={(subclass) => setClass({ subclass })} />
+                  <NumberField label="Livello" value={c.level} min={1} max={LEVEL_MAX} onCommit={(level) => setClass({ level })} />
+                  {s.classes.length > 1 && (
+                    <button
+                      type="button"
+                      className="ghost"
+                      aria-label={`Togli la classe ${c.name || i + 1}`}
+                      onClick={() => editSheet((x) => ({ ...x, classes: x.classes.filter((_, j) => j !== i) }))}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {s.classes.length < SHEET_LIMITS.classes && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => editSheet((x) => ({ ...x, classes: [...x.classes, { name: '', subclass: '', level: 1 }] }))}
+                >
+                  Aggiungi una classe (multiclasse)
+                </button>
+              </div>
+            )}
+          </fieldset>
+        </div>
+      )}
+
+      <div className="stats">
+        <Stat label="Bonus competenza">{formatSigned(sheetProficiency(s))}</Stat>
+        {editing ? (
+          <>
+            <NumberField label="CA" value={s.ac} min={0} max={SHEET_LIMITS.ac} onCommit={(ac) => editSheet((x) => ({ ...x, ac }))} />
+            <NumberField
+              label="Bonus iniziativa"
+              value={s.initiativeBonus}
+              min={-SHEET_LIMITS.bonus}
+              max={SHEET_LIMITS.bonus}
+              onCommit={(initiativeBonus) => editSheet((x) => ({ ...x, initiativeBonus }))}
+            />
+            <NumberField
+              label="Velocità (m)"
+              value={s.speedM}
+              min={0}
+              max={SHEET_LIMITS.metres}
+              decimals={1}
+              onCommit={(speedM) => editSheet((x) => ({ ...x, speedM }))}
+            />
+          </>
+        ) : (
+          <>
+            <Stat label="CA">{formatNumber(s.ac)}</Stat>
+            <div className="stat">
+              <span className="label">Iniziativa</span>
+              <button
+                type="button"
+                className="roll-btn"
+                aria-label={`Tira l’iniziativa, ${formatSigned(init)}`}
+                onClick={() => rollFrom(d20Formula(init), 'Iniziativa')}
+              >
+                {formatSigned(init)}
+              </button>
+            </div>
+            <Stat label="Velocità">{formatNumber(s.speedM, 1)} m</Stat>
+          </>
+        )}
+        <Stat label="Percezione passiva">{formatNumber(passivePerception(s))}</Stat>
+        <div className="stat">
+          <span className="label">PF</span>
+          <Link to="/" className="stat-value stat-link" aria-label={`PF ${hp.cur} su ${hp.max}: gestiscili nella sezione Tiri`}>
+            {formatNumber(hp.cur)}/{formatNumber(hp.max)}
+            {hp.temp > 0 && <span className="muted small"> +{formatNumber(hp.temp)}</span>}
+          </Link>
+        </div>
+        <div className="stat">
+          <span className="label">Ispirazione</span>
+          <button
+            type="button"
+            className={`toggle${s.inspiration ? ' on' : ''}`}
+            aria-pressed={s.inspiration}
+            onClick={() => editSheet((x) => ({ ...x, inspiration: !x.inspiration }))}
+          >
+            {s.inspiration ? 'Sì' : 'No'}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

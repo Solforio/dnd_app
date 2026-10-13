@@ -1,20 +1,55 @@
-import { useId } from 'react';
+import { useState } from 'react';
 import { useCharacterStore } from '../../data/characterStore';
+import { AbilitiesCard } from './AbilitiesCard';
+import { AttacksCard } from './AttacksCard';
+import { ConditionsCard } from './ConditionsCard';
+import { FeaturesCard } from './FeaturesCard';
+import { IdentityCard } from './IdentityCard';
+import { RollStrip } from './RollStrip';
+import { SkillsCard } from './SkillsCard';
+import { TraitsCard } from './TraitsCard';
 
-/** The character sheet of the active character. */
+/**
+ * The character sheet. Play mode: every value is a button that rolls through
+ * the dice module. Edit mode: the same sections become forms.
+ */
 export function SheetPage() {
-  const name = useCharacterStore((s) => s.character.name);
-  const rename = useCharacterStore((s) => s.rename);
-  const nameId = useId();
+  const [editing, setEditing] = useState(false);
+  const status = useCharacterStore((s) => s.hpStatus);
+  const { shortRest, longRest } = useCharacterStore.getState();
 
   return (
-    <main className="app-main single">
-      <section className="card stack" aria-label="Scheda del personaggio">
-        <div className="field">
-          <label htmlFor={nameId}>Nome del personaggio</label>
-          <input id={nameId} className="name-input" value={name} maxLength={80} onChange={(e) => rename(e.target.value)} />
-        </div>
-      </section>
+    <main className="app-main sheet">
+      <RollStrip />
+      <IdentityCard editing={editing} onToggleEdit={() => setEditing((e) => !e)} />
+      <div className="column">
+        <AbilitiesCard editing={editing} />
+        <SkillsCard editing={editing} />
+      </div>
+      <div className="column">
+        <AttacksCard editing={editing} />
+        <ConditionsCard />
+        <FeaturesCard editing={editing} />
+        <TraitsCard editing={editing} />
+        <section className="card stack" aria-labelledby="rest-title">
+          <h2 id="rest-title">Riposi</h2>
+          <div className="row">
+            <button type="button" onClick={shortRest}>
+              Riposo breve
+            </button>
+            <button type="button" onClick={longRest}>
+              Riposo lungo
+            </button>
+          </div>
+          <p className="small muted">
+            Il riposo breve recupera le capacità «a riposo breve». Il riposo lungo riporta i PF al massimo, recupera tutte le
+            capacità e toglie un livello di indebolimento.
+          </p>
+          <p className="status-line" role="status" aria-live="polite">
+            {status}
+          </p>
+        </section>
+      </div>
     </main>
   );
 }
