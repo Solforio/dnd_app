@@ -36,6 +36,7 @@ import {
   type Sharing,
 } from '../domain/party';
 import type { SessionUser } from './auth';
+import { deleteAllPartyMaps } from './mapRepo';
 
 /**
  * Firestore access for parties (brief section 6):
@@ -167,11 +168,12 @@ export function forgetMembership(db: Firestore, uid: string, pid: string): Promi
 }
 
 /**
- * Firestore does not cascade: quests and log entries go first (in batches of
+ * Firestore does not cascade: maps with their pins, quests and log entries go first (in batches of
  * up to 450), then the members, the code and the party, the DM's own card last.
  */
 export async function deleteParty(db: Firestore, uid: string, party: Party): Promise<void> {
   const pid = party.id;
+  await deleteAllPartyMaps(db, pid);
   const [quests, log, members] = await Promise.all([
     getDocs(questsOf(db, pid)),
     getDocs(logOf(db, pid)),
