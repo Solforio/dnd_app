@@ -6,7 +6,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 
 | Phase | State |
 |---|---|
-| 0: scaffold + module 1 (dice, HP, history) | **done**, not yet published (waiting for the GitHub repository) |
+| 0: scaffold + module 1 (dice, HP, history) | **done**, published at https://solforio.github.io/dnd_app/ (repo Solforio/dnd_app) |
 | 1: accounts and cloud save | not started |
 | 2: character sheet | not started |
 | 3: parties | not started |
@@ -48,5 +48,5 @@ Coming in Phase 1: firebase, react-router-dom, firebase-tools (emulator). Ask be
 
 ## Next step
 
-1. The user creates the GitHub repository, pushes, and enables Pages (README, "Pubblicazione").
+1. User checks Phase 0 on the live site (done: Pages from GitHub Actions, first deploy green).
 2. Phase 1: plan (Firebase checklist, rules, repositories, sync status) to approve before writing code.
