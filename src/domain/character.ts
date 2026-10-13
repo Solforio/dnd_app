@@ -3,8 +3,9 @@ import type { DieResult, RollMode, RollOutcome, TermResult } from './dice/types'
 import { HP_LIMIT, type DeathSaves, type Hp, type SaveCount } from './hp/hp';
 import { runMigrations, SchemaError, type Migration } from './schema/migrate';
 import { asArray, asBool, asInt, asOneOf, asRecord, asString } from './schema/sanitize';
+import { defaultSheet, sanitizeSheet, type Sheet } from './sheet/sheet';
 
-export const CHARACTER_SCHEMA_VERSION = 1;
+export const CHARACTER_SCHEMA_VERSION = 2;
 export const HISTORY_LIMIT = 100;
 export const PRESET_LIMIT = 50;
 const ROLL_MODES: readonly RollMode[] = ['normal', 'advantage', 'disadvantage'];
@@ -33,11 +34,16 @@ export interface Character {
   presets: Preset[];
   /** Newest first, at most HISTORY_LIMIT entries. */
   history: RollRecord[];
+  /** Character sheet, added in v2. */
+  sheet: Sheet;
   updatedAt: number;
 }
 
-/** Index n upgrades a character from version n to n + 1. Empty until the shape first changes. */
-export const characterMigrations: Readonly<Record<number, Migration>> = {};
+/** Index n upgrades a character from version n to n + 1. */
+export const characterMigrations: Readonly<Record<number, Migration>> = {
+  // v2 adds the character sheet. Old characters get a blank one; HP, presets and history are untouched.
+  1: (doc) => ({ ...doc, sheet: defaultSheet() }),
+};
 
 export function newId(): string {
   return crypto.randomUUID();
@@ -63,6 +69,7 @@ export function createCharacter(name = DEFAULT_CHARACTER_NAME): Character {
     rollMode: 'normal',
     presets: defaultPresets(),
     history: [],
+    sheet: defaultSheet(),
     updatedAt: Date.now(),
   };
 }
@@ -142,6 +149,7 @@ export function sanitizeCharacter(doc: Record<string, unknown>): Character {
     history: asArray(doc.history, HISTORY_LIMIT)
       .map(sanitizeRoll)
       .filter((r): r is RollRecord => r !== null),
+    sheet: sanitizeSheet(doc.sheet, newId),
     updatedAt: asInt(doc.updatedAt, 0, Number.MAX_SAFE_INTEGER, 0),
   };
 }

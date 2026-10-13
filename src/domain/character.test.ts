@@ -10,6 +10,7 @@ import {
   type RollRecord,
 } from './character';
 import { runMigrations, SchemaError } from './schema/migrate';
+import { defaultSheet } from './sheet/sheet';
 
 function record(i: number): RollRecord {
   return {
@@ -73,6 +74,33 @@ describe('loadCharacter', () => {
   });
 });
 
+describe('migration v1 → v2', () => {
+  // A character as saved by Phase 0 and 1 (localStorage, Firestore or an export file).
+  const v1 = {
+    schemaVersion: 1,
+    id: 'c1',
+    name: 'Brann',
+    hp: { cur: 7, max: 27, temp: 2 },
+    deathSaves: { successes: 0, failures: 0 },
+    rollMode: 'advantage',
+    presets: [{ id: 'p1', name: 'Martello', formula: '1d20+5' }],
+    history: [record(1)],
+    updatedAt: 1_700_000_000_000,
+  };
+
+  it('adds a blank sheet and keeps everything else', () => {
+    const c = loadCharacter(v1);
+    expect(c.schemaVersion).toBe(2);
+    expect(c.sheet).toEqual(defaultSheet());
+    expect({ ...c, sheet: undefined, schemaVersion: 1 }).toEqual({ ...v1, sheet: undefined });
+  });
+
+  it('imports a v1 export file', () => {
+    const file = JSON.stringify({ kind: 'dnd-companion/character', exportedAt: '2026-09-01T10:00:00Z', character: v1 });
+    expect(importCharacter(file).sheet.languages).toEqual(['Comune']);
+  });
+});
+
 describe('runMigrations', () => {
   const migrations = {
     1: (d: Record<string, unknown>) => ({ ...d, hp: { cur: d.hp, max: d.hp, temp: 0 } }),
@@ -113,6 +141,26 @@ describe('export and import', () => {
     c.deathSaves = { successes: 1, failures: 2 };
     c.rollMode = 'disadvantage';
     c.history = [record(1), record(2)];
+    c.sheet.classes = [{ name: 'Chierico', subclass: 'Dominio della guerra', level: 4 }];
+    c.sheet.abilities.wis = 17;
+    c.sheet.skills.insight = { prof: 2, bonus: 1 };
+    c.sheet.speedM = 7.5;
+    c.sheet.conditions = ['poisoned'];
+    c.sheet.attacks = [
+      {
+        id: 'a1',
+        name: 'Martello da guerra',
+        ability: 'str',
+        proficient: true,
+        bonus: 1,
+        damage: '1d8',
+        addAbilityToDamage: true,
+        damageBonus: 0,
+        damageType: 'contundenti',
+        notes: 'Versatile (1d10)',
+      },
+    ];
+    c.sheet.features = [{ id: 'f1', name: 'Incanalare divinità', source: 'Chierico', text: '…', uses: { cur: 0, max: 1, reset: 'short' } }];
     expect(importCharacter(exportCharacter(c))).toEqual(c);
   });
 

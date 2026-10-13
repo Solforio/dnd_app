@@ -1,4 +1,5 @@
 import { DEFAULT_CHARACTER_NAME, type Character } from './character';
+import { defaultSheet } from './sheet/sheet';
 
 export type SyncStatus =
   /** Logged out: data lives only in this browser. */
@@ -63,7 +64,8 @@ export function isUntouchedDefault(c: Character): boolean {
     c.hp.max === 10 &&
     c.hp.temp === 0 &&
     c.deathSaves.successes === 0 &&
-    c.deathSaves.failures === 0
+    c.deathSaves.failures === 0 &&
+    JSON.stringify(c.sheet) === JSON.stringify(defaultSheet())
   );
 }
 
