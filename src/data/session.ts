@@ -4,7 +4,14 @@ import type { Character } from '../domain/character';
 import { createDebouncedWriter, isUntouchedDefault, planUpload, type UploadPlan } from '../domain/sync';
 import { signOutUser, watchAuth, type SessionUser } from './auth';
 import { useCharacterStore } from './characterStore';
-import { createProfile, fetchAll, fetchCharacter, saveCharacter, setActiveCharacter } from './characterRepo';
+import {
+  createProfile,
+  deleteCharacter,
+  fetchAll,
+  fetchCharacter,
+  saveCharacter,
+  setActiveCharacter,
+} from './characterRepo';
 import { getFirebase } from './firebase';
 import { loadLocal, saveLocal } from './localStore';
 
@@ -146,15 +153,37 @@ function leaveCloud() {
 
 // --- Saving on every user change ---
 
+function deleteNow(id: string) {
+  const fb = getFirebase();
+  const user = useSession.getState().user;
+  if (!fb || !user) return;
+  useSession.setState((s) => ({ inFlight: s.inFlight + 1 }));
+  deleteCharacter(fb.db, user.uid, id)
+    .then(() => useSession.setState((s) => ({ inFlight: s.inFlight - 1 })))
+    .catch(() =>
+      useSession.setState((s) => ({
+        inFlight: s.inFlight - 1,
+        writeError: 'Non sono riuscito a eliminare il personaggio dall’account: ricarica la pagina e riprova.',
+      })),
+    );
+}
+
 useCharacterStore.subscribe((s, prev) => {
-  if (s.revision === prev.revision) return;
+  const edited = s.revision !== prev.revision;
+  const switched = s.selection !== prev.selection;
+  const removed = s.removed !== prev.removed && s.removed.length > 0;
+  if (!edited && !switched && !removed) return;
+
   const phase = useSession.getState().phase;
+  if (removed) useCharacterStore.setState({ removed: [] });
   if (phase === 'local') {
+    // The whole workspace is written, so removed characters simply disappear.
     if (localTimer !== undefined) clearTimeout(localTimer);
     localTimer = setTimeout(flushLocal, LOCAL_DEBOUNCE_MS);
     return;
   }
   if (phase !== 'cloud') return;
+
   if (s.character.id !== lastSavedId) {
     cloudWriter.flush(); // the previous character's pending change goes first
     lastSavedId = s.character.id;
@@ -162,8 +191,12 @@ useCharacterStore.subscribe((s, prev) => {
     const user = useSession.getState().user;
     if (fb && user) void setActiveCharacter(fb.db, user.uid, s.character.id).catch(() => {});
   }
-  cloudWriter.schedule(s.character);
-  useSession.setState({ debouncing: true });
+  // After the flush above, so a pending write cannot bring a removed character back.
+  if (removed) s.removed.forEach(deleteNow);
+  if (edited) {
+    cloudWriter.schedule(s.character);
+    useSession.setState({ debouncing: true });
+  }
 });
 
 // --- Upload of the device's characters to the account ---

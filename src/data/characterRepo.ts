@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, type Firestore } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc, type Firestore } from 'firebase/firestore';
 import { USER_SCHEMA_VERSION, type UserDoc } from '../domain/account';
 import { loadCharacter, type Character } from '../domain/character';
 
@@ -72,4 +72,9 @@ export function saveCharacter(db: Firestore, uid: string, c: Character): Promise
 
 export function setActiveCharacter(db: Firestore, uid: string, id: string): Promise<void> {
   return updateDoc(doc(db, 'users', uid), { activeCharacterId: id });
+}
+
+/** One write (a delete). Deleting a document that was never saved is harmless. */
+export function deleteCharacter(db: Firestore, uid: string, id: string): Promise<void> {
+  return deleteDoc(doc(charactersOf(db, uid), id));
 }

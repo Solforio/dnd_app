@@ -1,10 +1,13 @@
+import type { ReactNode } from 'react';
 import { Route, Routes } from 'react-router';
+import { TabNav } from './components/TabNav';
 import { useCharacterStore } from './data/characterStore';
 import { useSession } from './data/session';
 import { AccountBar } from './features/account/AccountBar';
 import { SignInPage } from './features/account/SignInPage';
 import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
+import { CharactersPage } from './features/character/CharactersPage';
 import { D20Result } from './features/dice/D20Result';
 import { DiceTray } from './features/dice/DiceTray';
 import { FormulaRoller } from './features/dice/FormulaRoller';
@@ -12,6 +15,7 @@ import { History } from './features/dice/History';
 import { ModeSelector } from './features/dice/ModeSelector';
 import { Presets } from './features/dice/Presets';
 import { HpPanel } from './features/hp/HpPanel';
+import { SheetPage } from './features/sheet/SheetPage';
 
 function Home() {
   const lastRoll = useCharacterStore((s) => s.character.history[0]);
@@ -37,6 +41,22 @@ function Home() {
   );
 }
 
+/** Tabs, the upload offer after login, then the page. */
+function WithTabs({ children }: { children: ReactNode }) {
+  const phase = useSession((s) => s.phase);
+  return (
+    <>
+      <TabNav />
+      {phase === 'cloud' && (
+        <div className="app-notice">
+          <UploadDialog />
+        </div>
+      )}
+      {children}
+    </>
+  );
+}
+
 export function App() {
   const phase = useSession((s) => s.phase);
   const warning = useSession((s) => s.warning);
@@ -57,21 +77,10 @@ export function App() {
       ))}
       {ready ? (
         <Routes>
-          <Route
-            path="/"
-            element={
-              <>
-                {phase === 'cloud' && (
-                  <div className="app-notice">
-                    <UploadDialog />
-                  </div>
-                )}
-                <Home />
-              </>
-            }
-          />
           <Route path="/accedi" element={<SignInPage />} />
-          <Route path="*" element={<Home />} />
+          <Route path="/scheda" element={<WithTabs><SheetPage /></WithTabs>} />
+          <Route path="/personaggi" element={<WithTabs><CharactersPage /></WithTabs>} />
+          <Route path="*" element={<WithTabs><Home /></WithTabs>} />
         </Routes>
       ) : (
         <main className="app-main">
@@ -83,7 +92,7 @@ export function App() {
       <footer className="app-footer small muted">
         {phase === 'cloud'
           ? 'I dati sono salvati sul tuo account e su questo dispositivo.'
-          : 'I dati restano su questo dispositivo. Usa «Esporta» per un backup, o accedi per salvarli sull’account.'}
+          : 'I dati restano su questo dispositivo. Usa «Esporta» nella pagina Personaggi per un backup, o accedi per salvarli sull’account.'}
       </footer>
     </>
   );

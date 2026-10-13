@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import {
   addToHistory,
   createCharacter,
-  importCharacter as parseImport,
   newId,
   PRESET_LIMIT,
   type Character,
@@ -13,17 +12,32 @@ import { parseFormula } from '../domain/dice/parser';
 import { cryptoDie } from '../domain/dice/rng';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
+import type { Sheet } from '../domain/sheet/sheet';
+import {
+  addAndSelect,
+  duplicate,
+  isFull,
+  LIMIT_MESSAGE,
+  removeFrom,
+  selectIn,
+  type Workspace,
+} from '../domain/workspace';
 
 /**
  * The characters on screen and every action on them. Where they are stored
- * (browser or account) is decided by session.ts, which watches `revision`.
+ * (browser or account) is decided by session.ts, which watches `revision`,
+ * `selection` and `removed`.
  */
 interface CharacterStore {
   character: Character;
-  /** Other characters of the same workspace; the picker arrives in Phase 2. */
+  /** Other characters of the same workspace. */
   others: Character[];
-  /** Bumped by every user change, never by loading data, so loads are not saved back. */
+  /** Bumped by every user change to the active character, never by loading data, so loads are not saved back. */
   revision: number;
+  /** Bumped when the user makes another character active (picking, creating, importing or removing one). */
+  selection: number;
+  /** Ids the user removed that storage has not deleted yet; session.ts empties it. */
+  removed: string[];
   /** Last HP/death-save explanation, announced through aria-live. */
   hpStatus: string;
 
@@ -34,6 +48,8 @@ interface CharacterStore {
   addPreset: (name: string, formula: string) => string | null;
   removePreset: (id: string) => void;
   rename: (name: string) => void;
+  /** Applies a change to the sheet of the active character. */
+  editSheet: (fn: (sheet: Sheet) => Sheet) => void;
 
   damage: (amount: number) => void;
   heal: (amount: number) => void;
@@ -43,8 +59,13 @@ interface CharacterStore {
   setDeathSaves: (saves: { successes: number; failures: number }) => void;
   rollDeathSave: () => void;
 
-  /** Replaces the current character with an imported one; returns an error message or null. */
-  importJson: (json: string) => string | null;
+  /** These return an Italian error message, or null on success. */
+  createNew: () => string | null;
+  duplicateOf: (id: string) => string | null;
+  /** Adds an imported character as active, replacing the one with the same id. */
+  addImported: (c: Character) => string | null;
+  select: (id: string) => void;
+  remove: (id: string) => void;
 
   /** Shows a workspace loaded from storage. Not a user change: nothing is saved. */
   showWorkspace: (characters: Character[], activeId: string | null) => void;
@@ -84,11 +105,32 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     return { hp, deathSaves };
   };
 
+  /** Switches workspace content after a user action. `saveActive` also writes the new active character. */
+  const switchTo = (w: Workspace, saveActive: boolean, extra: Partial<CharacterStore> = {}) =>
+    set((s) => ({
+      ...w,
+      ...extra,
+      selection: s.selection + 1,
+      revision: saveActive ? s.revision + 1 : s.revision,
+      hpStatus: '',
+    }));
+
+  /** Adds a brand-new character (created, duplicated or imported) as active, saved right away. */
+  const addCharacter = (c: Character): string | null => {
+    const s = get();
+    const replacing = s.character.id === c.id || s.others.some((o) => o.id === c.id);
+    if (!replacing && isFull(s)) return LIMIT_MESSAGE;
+    switchTo(addAndSelect(s, c), true);
+    return null;
+  };
+
   return {
     // Placeholder until session.ts loads the real workspace, before the first render.
     character: createCharacter(),
     others: [],
     revision: 0,
+    selection: 0,
+    removed: [],
     hpStatus: '',
 
     roll: (formula, label) => {
@@ -111,6 +153,7 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     },
     removePreset: (id) => update({ presets: get().character.presets.filter((p) => p.id !== id) }),
     rename: (name) => update({ name: name.slice(0, 80) }),
+    editSheet: (fn) => update({ sheet: fn(get().character.sheet) }),
 
     damage: (n) => applyVitals(hpRules.applyDamage(vitals(), n)),
     heal: (n) => applyVitals(hpRules.applyHealing(vitals(), n)),
@@ -130,23 +173,22 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
       });
     },
 
-    importJson: (json) => {
-      try {
-        const imported = { ...parseImport(json), updatedAt: Date.now() };
-        // A different character is not thrown away: it stays in the workspace for the Phase 2 picker.
-        set((s) => ({
-          character: imported,
-          others: [
-            ...(s.character.id === imported.id ? [] : [s.character]),
-            ...s.others.filter((c) => c.id !== imported.id),
-          ],
-          revision: s.revision + 1,
-          hpStatus: `Importato «${imported.name}».`,
-        }));
-        return null;
-      } catch (e) {
-        return e instanceof Error ? e.message : 'Importazione non riuscita.';
-      }
+    createNew: () => addCharacter(createCharacter()),
+    duplicateOf: (id) => {
+      const s = get();
+      const source = [s.character, ...s.others].find((c) => c.id === id);
+      return source ? addCharacter(duplicate(source, newId())) : null;
+    },
+    addImported: (c) => addCharacter({ ...c, updatedAt: Date.now() }),
+    select: (id) => {
+      const s = get();
+      if (s.character.id !== id) switchTo(selectIn(s, id), false);
+    },
+    remove: (id) => {
+      const s = get();
+      const next = removeFrom(s, id);
+      if (s.character.id === id) switchTo(next, false, { removed: [...s.removed, id] });
+      else set({ others: next.others, removed: [...s.removed, id] });
     },
 
     showWorkspace: (characters, activeId) => set({ ...pickActive(characters, activeId), hpStatus: '' }),
