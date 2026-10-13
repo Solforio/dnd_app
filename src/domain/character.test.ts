@@ -10,6 +10,7 @@ import {
   type RollRecord,
 } from './character';
 import { runMigrations, SchemaError } from './schema/migrate';
+import { defaultInventory } from './inventory';
 import { defaultSheet } from './sheet/sheet';
 
 function record(i: number): RollRecord {
@@ -74,7 +75,7 @@ describe('loadCharacter', () => {
   });
 });
 
-describe('migration v1 → v2', () => {
+describe('migrations v1 → v2 → v3', () => {
   // A character as saved by Phase 0 and 1 (localStorage, Firestore or an export file).
   const v1 = {
     schemaVersion: 1,
@@ -88,11 +89,20 @@ describe('migration v1 → v2', () => {
     updatedAt: 1_700_000_000_000,
   };
 
-  it('adds a blank sheet and keeps everything else', () => {
+  it('adds a blank sheet and an empty inventory, and keeps everything else', () => {
     const c = loadCharacter(v1);
-    expect(c.schemaVersion).toBe(2);
+    expect(c.schemaVersion).toBe(3);
     expect(c.sheet).toEqual(defaultSheet());
-    expect({ ...c, sheet: undefined, schemaVersion: 1 }).toEqual({ ...v1, sheet: undefined });
+    expect(c.inventory).toEqual(defaultInventory());
+    expect({ ...c, sheet: undefined, inventory: undefined, schemaVersion: 1 }).toEqual({ ...v1, sheet: undefined, inventory: undefined });
+  });
+
+  it('upgrades a v2 character (Phase 2 and 3) keeping its sheet', () => {
+    const sheet = { ...defaultSheet(), race: 'Nano', abilities: { ...defaultSheet().abilities, str: 16 } };
+    const c = loadCharacter({ ...v1, schemaVersion: 2, sheet });
+    expect(c.schemaVersion).toBe(3);
+    expect(c.sheet).toEqual(sheet);
+    expect(c.inventory).toEqual(defaultInventory());
   });
 
   it('imports a v1 export file', () => {
@@ -161,6 +171,12 @@ describe('export and import', () => {
       },
     ];
     c.sheet.features = [{ id: 'f1', name: 'Incanalare divinità', source: 'Chierico', text: '…', uses: { cur: 0, max: 1, reset: 'short' } }];
+    c.inventory.items = [
+      { id: 'i1', name: 'Zaino', category: 'gear', quantity: 1, weightLb: 5, valueCp: 200, notes: '', equipped: false, requiresAttunement: false, attuned: false, isContainer: true, containerCapacityLb: 30, weightlessContents: false, containerId: null },
+      { id: 'i2', name: 'Anello', category: 'magic', quantity: 1, weightLb: 0, valueCp: 0, notes: 'Protezione', equipped: true, requiresAttunement: true, attuned: true, isContainer: false, containerCapacityLb: null, weightlessContents: false, containerId: 'i1' },
+    ];
+    c.inventory.coins.gp = 85;
+    c.inventory.settings = { weightUnit: 'lb', capacityPerStrLb: 7.5, variantEncumbrance: true, coinsHaveWeight: false };
     expect(importCharacter(exportCharacter(c))).toEqual(c);
   });
 

@@ -1,4 +1,5 @@
 import { DEFAULT_CHARACTER_NAME, type Character } from './character';
+import { defaultInventory } from './inventory';
 import { defaultSheet } from './sheet/sheet';
 
 export type SyncStatus =
@@ -65,7 +66,8 @@ export function isUntouchedDefault(c: Character): boolean {
     c.hp.temp === 0 &&
     c.deathSaves.successes === 0 &&
     c.deathSaves.failures === 0 &&
-    JSON.stringify(c.sheet) === JSON.stringify(defaultSheet())
+    JSON.stringify(c.sheet) === JSON.stringify(defaultSheet()) &&
+    JSON.stringify(c.inventory) === JSON.stringify(defaultInventory())
   );
 }
 

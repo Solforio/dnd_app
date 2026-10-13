@@ -1,11 +1,12 @@
 import { parseFormula } from './dice/parser';
 import type { DieResult, RollMode, RollOutcome, TermResult } from './dice/types';
 import { HP_LIMIT, type DeathSaves, type Hp, type SaveCount } from './hp/hp';
+import { defaultInventory, sanitizeInventory, type Inventory } from './inventory';
 import { runMigrations, SchemaError, type Migration } from './schema/migrate';
 import { asArray, asBool, asInt, asOneOf, asRecord, asString } from './schema/sanitize';
 import { defaultSheet, sanitizeSheet, type Sheet } from './sheet/sheet';
 
-export const CHARACTER_SCHEMA_VERSION = 2;
+export const CHARACTER_SCHEMA_VERSION = 3;
 export const HISTORY_LIMIT = 100;
 export const PRESET_LIMIT = 50;
 const ROLL_MODES: readonly RollMode[] = ['normal', 'advantage', 'disadvantage'];
@@ -36,6 +37,8 @@ export interface Character {
   history: RollRecord[];
   /** Character sheet, added in v2. */
   sheet: Sheet;
+  /** Inventory, coins and carrying settings, added in v3. */
+  inventory: Inventory;
   updatedAt: number;
 }
 
@@ -43,6 +46,8 @@ export interface Character {
 export const characterMigrations: Readonly<Record<number, Migration>> = {
   // v2 adds the character sheet. Old characters get a blank one; HP, presets and history are untouched.
   1: (doc) => ({ ...doc, sheet: defaultSheet() }),
+  // v3 adds the inventory, empty.
+  2: (doc) => ({ ...doc, inventory: defaultInventory() }),
 };
 
 export function newId(): string {
@@ -70,6 +75,7 @@ export function createCharacter(name = DEFAULT_CHARACTER_NAME): Character {
     presets: defaultPresets(),
     history: [],
     sheet: defaultSheet(),
+    inventory: defaultInventory(),
     updatedAt: Date.now(),
   };
 }
@@ -150,6 +156,7 @@ export function sanitizeCharacter(doc: Record<string, unknown>): Character {
       .map(sanitizeRoll)
       .filter((r): r is RollRecord => r !== null),
     sheet: sanitizeSheet(doc.sheet, newId),
+    inventory: sanitizeInventory(doc.inventory, newId),
     updatedAt: asInt(doc.updatedAt, 0, Number.MAX_SAFE_INTEGER, 0),
   };
 }
