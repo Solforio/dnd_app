@@ -51,7 +51,9 @@ export function defaultPresets(): Preset[] {
   ];
 }
 
-export function createCharacter(name = 'Nuovo personaggio'): Character {
+export const DEFAULT_CHARACTER_NAME = 'Nuovo personaggio';
+
+export function createCharacter(name = DEFAULT_CHARACTER_NAME): Character {
   return {
     schemaVersion: CHARACTER_SCHEMA_VERSION,
     id: newId(),
