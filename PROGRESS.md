@@ -10,7 +10,9 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | 1: accounts and cloud save | **done**, live on Firebase project `dungeons-9446d` (Spark); confirmed working by the user |
 | 2: character sheet and multiple characters | **done** (2026-10-13) |
 | 3: parties | **done** (2026-10-13); rules (35 tests) deployed to `dungeons-9446d`; two-browser emulator check passes |
-| 4+: inventory, notes, codex, maps, PWA | not started |
+| 4: inventory and weight | **done** (2026-10-13) |
+| maps (requested before 5 to 7) | next: plan first |
+| 5+: notes, codex, PWA | not started |
 
 ## Phase 0: what exists
 
@@ -35,7 +37,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 - **d20 mode**: stored per character (`rollMode`). Death-save rolls always use a plain d20, ignoring the selector.
 - **HP rules beyond the brief**: damage at 0 HP to a *stable* character resets the successes and adds one failure (no longer stable). Healing a dead character does nothing (the message says to clear the failures by hand). Raising current HP above 0 by a direct edit resets the death saves.
 - **Router**: `HashRouter` (react-router) is postponed until there is a second screen (Phase 1), to avoid a dependency with no use yet.
-- **Inventory (Phase 4, agreed with the user)**: weights are **always stored in pounds**; the UI shows and edits in kg or lb, kg by default, using the Italian Player's Handbook conversion **1 lb = 0.5 kg**. Capacity = STR × an editable coefficient (`capacityPerStrLb`, default 15, range 1 to 50, step 0.5, "Ripristina 15 lb" button), shown in the chosen unit (15 lb = 7.5 kg). The variant encumbrance thresholds are 1/3 and 2/3 of the capacity. Planned shape: `inventorySettings { weightUnit: 'kg'|'lb', capacityPerStrLb, variantEncumbrance }` in the character, with schemaVersion +1 and a migration.
+- **Inventory (Phase 4, agreed with the user)**: weights are **always stored in pounds**; the UI shows and edits in kg or lb, kg by default, using the Italian Player's Handbook conversion **1 lb = 0.5 kg**. Capacity = STR × an editable coefficient (`capacityPerStrLb`, default 15, range 1 to 50, step 0.5, "Ripristina 15 lb" button), shown in the chosen unit (15 lb = 7.5 kg). The variant encumbrance thresholds are 1/3 and 2/3 of the capacity. Built in Phase 4 (see below).
 
 ## Phase 1: what exists
 
@@ -99,6 +101,21 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 - **Delete party**: quests and log in batches of 450, then other cards, code, party, own card and membership in a final batch.
 - **Quota** (party of 6, 4 h): ~35 reads to open the screen, ~600 summary writes delivered to 6 screens ≈ 3.600 reads; total ≈ 4.000 reads and 800 writes per session.
 
+## Phase 4: what exists
+
+- `src/domain/inventory.ts`: `Inventory` (`items`, `coins`, `settings`), `sanitizeInventory`, weights (`carriedWeightLb`, `contentsWeightLb`, `coinsWeightLb`), value (`totalValueCp`, `coinsValueCp`), `capacityLb`, `encumbrance`, `speedPenaltyM`, units (`toUnit`, `fromUnit`, `formatWeight`, `formatGp`).
+- Character **v3** = v2 + `inventory`; migration 2→3 adds `defaultInventory()` (tested from v1 and v2; export round-trip includes the inventory).
+- UI: tab «Zaino» (`src/features/inventory/`): weight bar and encumbrance, kg/lb toggle, items with search and category filter, containers with their contents underneath, quick ± quantity, `ItemEditor`, coins, weight settings. The sheet shows the speed penalty.
+
+## Phase 4 decisions
+
+- Weights in **pounds** (2 decimals), values in **copper pieces** (integers); UI in kg (default) or lb, values in mo with up to 2 decimals.
+- **Containers**: one level only (a container is never inside another); optional capacity with a "troppo pieno" warning; «il contenuto non pesa» for a bag of holding. Removing a container, or unticking «È un contenitore», moves its contents out instead of deleting them.
+- **Attunement**: at most 3; the UI disables the fourth, sanitizing keeps the first 3.
+- **Coins**: cp, sp, ep, gp, pp (mr, ma, me, mo, mp); 50 coins = 1 lb; «Le monete pesano» can be switched off (user request).
+- **Encumbrance**: over capacity = «Sovraccarico» always; with the variant rule over ⅓ «Ingombrato» (−3 m), over ⅔ «Pesantemente ingombrato» (−6 m); shown on the sheet's speed.
+- Inventory is never shared in parties. No Firestore cost beyond the character's existing debounced save.
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
@@ -110,12 +127,12 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Next step
 
-1. User tries Phase 3 on https://solforio.github.io/dnd_app/ with a friend (create a party, join with the code, check the cards update).
-2. Then the backlog below (HP visible on phones, dice animation: ask what they picture), or Phase 4 (inventory and weight, decisions already agreed above). Ask the user which first.
+1. User tries the inventory, the quick HP bar and the 3D die on https://solforio.github.io/dnd_app/.
+2. Maps: write the plan (personal and party maps, sub-maps of cities, pins, Firestore layout and rules for party pins, quota) and wait for approval. The user is gathering the map images.
 
 ## Backlog (user requests, 2026-10-13)
 
-Order chosen by the user: 1) HP visible on phones, 2) 3D dice animation, 3) Phase 4 inventory, 4) maps.
+Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (done), 3) Phase 4 inventory (done), 4) maps (next).
 
 - **Maps (requested early)**: interactive Faerûn map with city sub-maps, clickable; pins on a personal map and on a shared party map. Constraints: no WotC map images in the repo (user loads their own image, kept in the browser, or a fan map with a compatible licence); no Cloud Storage (needs Blaze), so a shared map image cannot be uploaded: pins are shared through Firestore with coordinates relative to the image, each member loads the same image locally. Plan with a quota estimate before building.
 
