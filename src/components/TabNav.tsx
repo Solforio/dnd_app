@@ -3,6 +3,7 @@ import { NavLink } from 'react-router';
 const TABS = [
   { to: '/', label: 'Tiri', end: true },
   { to: '/scheda', label: 'Scheda', end: true },
+  { to: '/zaino', label: 'Zaino', end: true },
   { to: '/personaggi', label: 'Personaggi', end: true },
   // Not `end`: the tab stays highlighted inside a party (/gruppo/:id).
   { to: '/gruppo', label: 'Gruppo', end: false },

@@ -1316,7 +1316,8 @@ textarea {
   }
 
   .tab {
-    padding: 0 var(--space-3);
+    padding: 0 9px;
+    font-size: 0.9375rem;
   }
 }
 
@@ -1393,4 +1394,101 @@ textarea {
 
 .die3d .total {
   pointer-events: none;
+}
+
+/* --- Inventory --- */
+
+.unit-toggle {
+  min-width: 110px;
+}
+
+.hp-bar .load {
+  background: var(--green);
+}
+
+.hp-bar .load.encumbered {
+  background: var(--gold);
+}
+
+.hp-bar .load.heavily,
+.hp-bar .load.over {
+  background: var(--red);
+}
+
+.encumbrance.encumbered {
+  color: var(--gold);
+}
+
+.encumbrance.heavily,
+.encumbrance.over {
+  color: var(--red);
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.item-row.container {
+  border-color: var(--surface2);
+  background: var(--surface2);
+}
+
+.item-row.inside {
+  margin-left: var(--space-4);
+  border-left: 3px solid var(--surface2);
+}
+
+.item-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.item-name .result-tag {
+  margin-left: var(--space-1);
+}
+
+.item-actions {
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+}
+
+.item-actions button:not(.ghost) {
+  min-width: 36px;
+  padding: 0;
+}
+
+.qty {
+  min-width: 2.6em;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .item-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.coins {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.coins input[type='number'] {
+  width: 100%;
 }

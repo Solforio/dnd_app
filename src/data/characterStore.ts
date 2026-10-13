@@ -12,6 +12,7 @@ import { parseFormula } from '../domain/dice/parser';
 import { cryptoDie } from '../domain/dice/rng';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
+import type { Inventory } from '../domain/inventory';
 import { longRestSheet, shortRest, type RestResult, type Sheet } from '../domain/sheet/sheet';
 import {
   addAndSelect,
@@ -50,6 +51,8 @@ interface CharacterStore {
   rename: (name: string) => void;
   /** Applies a change to the sheet of the active character. */
   editSheet: (fn: (sheet: Sheet) => Sheet) => void;
+  /** Applies a change to the inventory of the active character. */
+  editInventory: (fn: (inv: Inventory) => Inventory) => void;
 
   damage: (amount: number) => void;
   heal: (amount: number) => void;
@@ -159,6 +162,7 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     removePreset: (id) => update({ presets: get().character.presets.filter((p) => p.id !== id) }),
     rename: (name) => update({ name: name.slice(0, 80) }),
     editSheet: (fn) => update({ sheet: fn(get().character.sheet) }),
+    editInventory: (fn) => update({ inventory: fn(get().character.inventory) }),
 
     damage: (n) => applyVitals(hpRules.applyDamage(vitals(), n)),
     heal: (n) => applyVitals(hpRules.applyHealing(vitals(), n)),

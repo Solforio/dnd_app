@@ -16,6 +16,7 @@ import { ModeSelector } from './features/dice/ModeSelector';
 import { Presets } from './features/dice/Presets';
 import { HpPanel } from './features/hp/HpPanel';
 import { HpQuick } from './features/hp/HpQuick';
+import { InventoryPage } from './features/inventory/InventoryPage';
 import { PartiesPage } from './features/party/PartiesPage';
 import { PartyPage } from './features/party/PartyPage';
 import { SheetPage } from './features/sheet/SheetPage';
@@ -83,6 +84,7 @@ export function App() {
         <Routes>
           <Route path="/accedi" element={<SignInPage />} />
           <Route path="/scheda" element={<WithTabs><SheetPage /></WithTabs>} />
+          <Route path="/zaino" element={<WithTabs><InventoryPage /></WithTabs>} />
           <Route path="/personaggi" element={<WithTabs><CharactersPage /></WithTabs>} />
           <Route path="/gruppo" element={<WithTabs><PartiesPage /></WithTabs>} />
           <Route path="/gruppo/:partyId" element={<WithTabs><PartyPage /></WithTabs>} />

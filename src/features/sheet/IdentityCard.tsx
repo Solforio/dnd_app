@@ -5,6 +5,7 @@ import { TextField } from '../../components/TextField';
 import { useCharacterStore } from '../../data/characterStore';
 import { d20Formula, initiative, passivePerception, sheetProficiency, SHEET_LIMITS, totalLevel } from '../../domain/sheet/sheet';
 import { LEVEL_MAX } from '../../domain/sheet/rules';
+import { capacityLb, carriedWeightLb, encumbrance, speedPenaltyM } from '../../domain/inventory';
 import { formatNumber, formatSigned } from '../../domain/format/number';
 import { editSheet, rollFrom, useSheet } from './sheetHooks';
 
@@ -24,6 +25,11 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
   const rename = useCharacterStore((s) => s.rename);
   const s = useSheet();
   const init = initiative(s);
+  const inventory = useCharacterStore((x) => x.character.inventory);
+  const penalty = speedPenaltyM(
+    encumbrance(carriedWeightLb(inventory), capacityLb(s.abilities.str, inventory.settings), inventory.settings.variantEncumbrance),
+    inventory.settings.variantEncumbrance,
+  );
 
   const subtitle = [
     s.race,
@@ -141,7 +147,16 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
                 {formatSigned(init)}
               </button>
             </div>
-            <Stat label="Velocità">{formatNumber(s.speedM, 1)} m</Stat>
+            <Stat label="Velocità">
+              {penalty > 0 ? (
+                <span>
+                  {formatNumber(Math.max(0, s.speedM - penalty), 1)} m{' '}
+                  <span className="small red">(−{formatNumber(penalty)} ingombro)</span>
+                </span>
+              ) : (
+                <>{formatNumber(s.speedM, 1)} m</>
+              )}
+            </Stat>
           </>
         )}
         <Stat label="Percezione passiva">{formatNumber(passivePerception(s))}</Stat>
