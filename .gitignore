@@ -8,3 +8,6 @@ coverage
 firebase-debug.log*
 .firebase
 !.env.emulators
+
+# Map images loaded by the user: copyrighted, never committed (brief: copyright)
+faerun-images/
