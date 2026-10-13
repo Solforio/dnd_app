@@ -1,6 +1,11 @@
 rules_version = '2';
 
-// Phase 1: every user reads and writes only their own data. Everything else is denied.
+// Private data: every user reads and writes only their own documents.
+// Parties (Phase 3): readable by members only; joining works through a join
+// code checked here, because Cloud Functions are not available on Spark.
+// Everything not matched below is denied.
+//
+// Cost note: exists()/get() calls in these rules can count as document reads.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -9,6 +14,35 @@ service cloud.firestore {
 
     function isOwner(uid) {
       return signedIn() && request.auth.uid == uid;
+    }
+
+    function usernameMatchesEmail(username) {
+      return request.auth.token.email == username + '@dnd.local';
+    }
+
+    function partyPath(pid) {
+      return /databases/$(database)/documents/parties/$(pid);
+    }
+
+    function memberPath(pid, uid) {
+      return /databases/$(database)/documents/parties/$(pid)/members/$(uid);
+    }
+
+    function codePath(code) {
+      return /databases/$(database)/documents/partyCodes/$(code);
+    }
+
+    function isMember(pid) {
+      return signedIn() && exists(memberPath(pid, request.auth.uid));
+    }
+
+    /** True when the caller owns the party as it was before this request. */
+    function isPartyOwner(pid) {
+      return signedIn() && get(partyPath(pid)).data.ownerUid == request.auth.uid;
+    }
+
+    function shortString(v, max) {
+      return v is string && v.size() <= max;
     }
 
     match /users/{uid} {
@@ -24,7 +58,7 @@ service cloud.firestore {
       // The username must match the synthetic sign-in email, so nobody can claim another name.
       allow create: if isOwner(uid)
         && validUser(request.resource.data)
-        && request.auth.token.email == request.resource.data.username + '@dnd.local';
+        && usernameMatchesEmail(request.resource.data.username);
       allow update: if isOwner(uid)
         && validUser(request.resource.data)
         && request.resource.data.username == resource.data.username
@@ -40,6 +74,184 @@ service cloud.firestore {
 
         allow read, delete: if isOwner(uid);
         allow create, update: if isOwner(uid) && validCharacter(request.resource.data);
+      }
+
+      // Private list of "my parties", so the app needs no collection-group query.
+      match /memberships/{pid} {
+        function validMembership(data) {
+          return data.keys().hasOnly(['schemaVersion', 'partyId', 'name', 'role', 'characterId', 'sharing', 'joinedAt'])
+            && data.schemaVersion is int
+            && data.partyId == pid
+            && shortString(data.name, 60)
+            && data.role in ['dm', 'player']
+            && shortString(data.characterId, 64)
+            && data.sharing is map
+            && data.joinedAt is int;
+        }
+
+        allow read, delete: if isOwner(uid);
+        // Created in the same batch as the member document.
+        allow create: if isOwner(uid)
+          && validMembership(request.resource.data)
+          && existsAfter(memberPath(pid, uid));
+        allow update: if isOwner(uid) && validMembership(request.resource.data);
+      }
+    }
+
+    // A code reveals its party id; codes cannot be listed, and 8 characters
+    // from a 31-letter alphabet make guessing impractical.
+    match /partyCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['partyId'])
+        && getAfter(partyPath(request.resource.data.partyId)).data.ownerUid == request.auth.uid
+        && getAfter(partyPath(request.resource.data.partyId)).data.joinCode == code;
+      allow delete: if isPartyOwner(resource.data.partyId);
+    }
+
+    match /parties/{pid} {
+      function validParty(data) {
+        return data.keys().hasOnly([
+            'schemaVersion', 'name', 'campaignName', 'ownerUid', 'joinCode', 'joinEnabled',
+            'currentLocation', 'nextSession', 'createdAt', 'updatedAt'])
+          && data.schemaVersion is int
+          && shortString(data.name, 60) && data.name.size() > 0
+          && shortString(data.campaignName, 80)
+          && data.ownerUid is string
+          && data.joinCode is string && data.joinCode.size() == 8
+          && data.joinEnabled is bool
+          && shortString(data.currentLocation, 80)
+          && (data.nextSession == null || (data.nextSession is map
+            && data.nextSession.keys().hasOnly(['at', 'place', 'note'])
+            && data.nextSession.at is int
+            && shortString(data.nextSession.place, 120)
+            && shortString(data.nextSession.note, 500)))
+          && data.createdAt is int
+          && data.updatedAt is int;
+      }
+
+      allow get: if isMember(pid);
+      allow list: if false;
+
+      // One batch: party + its code + the creator's member document (as DM) + membership.
+      allow create: if signedIn()
+        && validParty(request.resource.data)
+        && request.resource.data.ownerUid == request.auth.uid
+        && getAfter(memberPath(pid, request.auth.uid)).data.role == 'dm'
+        && existsAfter(codePath(request.resource.data.joinCode));
+
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && validParty(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        // Ownership moves only to an existing member, with both roles swapped in the same batch.
+        && (request.resource.data.ownerUid == resource.data.ownerUid
+          || (getAfter(memberPath(pid, request.resource.data.ownerUid)).data.role == 'dm'
+            && getAfter(memberPath(pid, request.auth.uid)).data.role == 'player'))
+        // A new code replaces the old one in the same batch.
+        && (request.resource.data.joinCode == resource.data.joinCode
+          || (existsAfter(codePath(request.resource.data.joinCode))
+            && !existsAfter(codePath(resource.data.joinCode))));
+
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      match /members/{uid} {
+        function validMember(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'username', 'role', 'characterId', 'summary', 'sharing',
+              'joinCode', 'joinedAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && data.username is string
+            && data.role in ['dm', 'player']
+            && shortString(data.characterId, 64)
+            && data.summary is map && data.summary.size() <= 20
+            && data.sharing is map && data.sharing.size() <= 4
+            && data.joinCode is string
+            && data.joinedAt is int
+            && data.updatedAt is int;
+        }
+
+        /** The DM role always belongs to the party's owner (after this request). */
+        function roleMatchesOwner(role) {
+          return (getAfter(partyPath(pid)).data.ownerUid == uid) == (role == 'dm');
+        }
+
+        allow read: if isMember(pid);
+
+        allow create: if isOwner(uid)
+          && validMember(request.resource.data)
+          && usernameMatchesEmail(request.resource.data.username)
+          && (
+            // The creator, in the party-creation batch.
+            (request.resource.data.role == 'dm'
+              && getAfter(partyPath(pid)).data.ownerUid == uid)
+            // A player with the current code, while joining is enabled.
+            || (request.resource.data.role == 'player'
+              && get(partyPath(pid)).data.joinEnabled == true
+              && get(partyPath(pid)).data.joinCode == request.resource.data.joinCode)
+          );
+
+        allow update: if signedIn()
+          && validMember(request.resource.data)
+          && request.resource.data.username == resource.data.username
+          && request.resource.data.joinCode == resource.data.joinCode
+          && request.resource.data.joinedAt == resource.data.joinedAt
+          && (
+            // Own card: summary, sharing, character; the role only changes in an ownership transfer.
+            (isOwner(uid)
+              && (request.resource.data.role == resource.data.role || roleMatchesOwner(request.resource.data.role)))
+            // The DM hands over the role: only `role` changes, and it must match the new owner.
+            || (isPartyOwner(pid)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role'])
+              && roleMatchesOwner(request.resource.data.role))
+          );
+
+        // Leaving (the owner only once the party is gone), or removal by the DM.
+        allow delete: if (isOwner(uid)
+            && (!existsAfter(partyPath(pid)) || getAfter(partyPath(pid)).data.ownerUid != uid))
+          || (isPartyOwner(pid) && uid != request.auth.uid);
+      }
+
+      match /quests/{questId} {
+        function validQuest(data) {
+          return data.keys().hasOnly(['schemaVersion', 'title', 'description', 'status', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.title, 100) && data.title.size() > 0
+            && shortString(data.description, 2000)
+            && data.status in ['active', 'completed', 'failed']
+            && data.updatedAt is int;
+        }
+
+        allow read: if isMember(pid);
+        allow create, update: if isPartyOwner(pid) && validQuest(request.resource.data);
+        allow delete: if isPartyOwner(pid);
+      }
+
+      match /log/{entryId} {
+        function validEntry(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'title', 'body', 'sessionDate', 'authorUid', 'authorName', 'createdAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.title, 100) && data.title.size() > 0
+            && shortString(data.body, 10000)
+            && shortString(data.sessionDate, 10)
+            && data.authorUid is string
+            && shortString(data.authorName, 20)
+            && data.createdAt is int
+            && data.updatedAt is int;
+        }
+
+        allow read: if isMember(pid);
+        allow create: if isMember(pid)
+          && validEntry(request.resource.data)
+          && request.resource.data.authorUid == request.auth.uid;
+        allow update: if isMember(pid)
+          && validEntry(request.resource.data)
+          && request.resource.data.authorUid == resource.data.authorUid
+          && request.resource.data.createdAt == resource.data.createdAt
+          && (resource.data.authorUid == request.auth.uid || isPartyOwner(pid));
+        allow delete: if resource.data.authorUid == request.auth.uid || isPartyOwner(pid);
       }
     }
   }

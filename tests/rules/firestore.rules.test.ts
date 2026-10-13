@@ -117,6 +117,6 @@ describe('users/{uid}/characters/{id}', () => {
 describe('everything else', () => {
   it('is denied', async () => {
     await assertFails(setDoc(doc(as('alice'), 'anything/else'), { a: 1 }));
-    await assertFails(getDoc(doc(as('alice'), 'parties/p1')));
+    await assertFails(getDoc(doc(as('alice'), 'parties/p1'))); // no such party, and alice is not a member
   });
 });
