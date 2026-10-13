@@ -7,7 +7,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | Phase | State |
 |---|---|
 | 0: scaffold + module 1 (dice, HP, history) | **done**, published at https://solforio.github.io/dnd_app/ (repo Solforio/dnd_app) |
-| 1: accounts and cloud save | **code written**, waiting for Java (emulator) and the Firebase project to verify |
+| 1: accounts and cloud save | **code written**; rules tests (11) and sign-up/isolation check pass on the emulator; waiting for the real Firebase project |
 | 2: character sheet | not started |
 | 3: parties | not started |
 | 4+: inventory, notes, codex, maps, PWA | not started |
@@ -63,9 +63,9 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Open questions
 
-- Firebase: check that Auth accepts `<username>@dnd.local` (first step of Phase 1, in the emulator).
+- Firebase: `<username>@dnd.local` is accepted by the Auth emulator; still to confirm on the real project.
 
 ## Next step
 
-1. User installs Java 21, then: `npm run test:rules` and a manual run with `npm run emulators` + `npm run dev:emu` (also verifies that `@dnd.local` emails are accepted).
+1. Done: Java 21 installed, `npm run test:rules` green, emulator flow checked. User to try the UI with `npm run emulators` + `npm run dev:emu`.
 2. User creates the Firebase project (Spark, no billing), following the checklist in the Phase 1 plan; paste the web config into `src/data/firebaseConfig.ts`; publish `firestore.rules`; add `solforio.github.io` to the authorized domains.
