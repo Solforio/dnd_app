@@ -119,5 +119,5 @@ Order chosen by the user: 1) HP visible on phones, 2) 3D dice animation, 3) Phas
 
 - **Maps (requested early)**: interactive Faerûn map with city sub-maps, clickable; pins on a personal map and on a shared party map. Constraints: no WotC map images in the repo (user loads their own image, kept in the browser, or a fan map with a compatible licence); no Cloud Storage (needs Blaze), so a shared map image cannot be uploaded: pins are shared through Firestore with coordinates relative to the image, each member loads the same image locally. Plan with a quota estimate before building.
 
-- **Dice animation**: the user chose a **3D die** (rolling d20). Respect `prefers-reduced-motion`.
-- **HP on the Tiri page on phones**: HP are below the dice and need scrolling. Make them visible without scrolling (e.g. a compact HP bar near the top on small screens).
+- **Dice animation**: done: `Die3D` + `d20geometry.ts`, a real icosahedron projected into SVG each frame (no library), tumbles ~1,1 s and lands with the natural d20 face in front showing the total; none with reduced motion, and the roll already on screen at page load does not tumble.
+- **HP on phones**: done: `HpQuick`, sticky at the top of the Tiri page below 860 px, with quick damage and healing.

@@ -1,0 +1,129 @@
+import { useEffect, useState } from 'react';
+import {
+  apply,
+  axisAngle,
+  dot,
+  easeOutCubic,
+  FACES,
+  faceToViewer,
+  hash,
+  multiply,
+  normalize,
+  VERTICES,
+  type Mat3,
+  type Vec3,
+} from './d20geometry';
+
+const DURATION_MS = 1100;
+const LIGHT = normalize([-0.45, 0.65, 1]);
+const DARK_RGB = [34, 32, 58];
+const LIT_RGB = [96, 90, 150];
+/** Mild perspective: the camera sits 4 radii away. */
+const CAMERA = 4;
+
+function project(v: Vec3): [number, number] {
+  const k = CAMERA / (CAMERA - v[2]);
+  return [100 + v[0] * 86 * k, 100 - v[1] * 86 * k];
+}
+
+function shade(lambert: number): string {
+  const mix = (i: number) => Math.round(DARK_RGB[i]! + (LIT_RGB[i]! - DARK_RGB[i]!) * lambert);
+  return `rgb(${mix(0)} ${mix(1)} ${mix(2)})`;
+}
+
+function fontSize(text: string): number {
+  if (text.length <= 2) return 40;
+  if (text.length === 3) return 32;
+  if (text.length <= 5) return 24;
+  return 17;
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+interface Props {
+  /** Changes on every roll and restarts the animation; undefined before the first roll. */
+  rollId: string | undefined;
+  /** What the front face shows once the die stops. */
+  text: string;
+  /** The natural d20, when there is one: that face ends up in front. */
+  natural?: number;
+  className: string;
+  label: string;
+}
+
+/**
+ * The memorable element: a real icosahedron, rotated and projected into SVG
+ * every frame. It tumbles, bounces and settles with the result towards the
+ * viewer. With reduced motion it simply appears in its final position.
+ */
+export function Die3D({ rollId, text, natural, className, label }: Props) {
+  // Progress of the animation for one roll id; a new id starts again from 0.
+  const [anim, setAnim] = useState<{ id: string | undefined; t: number }>({ id: rollId, t: 1 });
+  // The roll already on screen when the page opens does not tumble again.
+  const [mountedWith] = useState(rollId);
+  const animate = rollId !== undefined && rollId !== mountedWith && !prefersReducedMotion();
+  const progress = !animate ? 1 : anim.id === rollId ? anim.t : 0;
+
+  useEffect(() => {
+    if (!animate) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / DURATION_MS);
+      setAnim({ id: rollId, t });
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [rollId, animate]);
+
+  const seed = hash(rollId ?? 'idle');
+  const target = FACES.find((f) => f.value === natural) ?? FACES[seed % FACES.length]!;
+  const final = faceToViewer(target);
+  // Before the first roll the die rests slightly turned, so it reads as a solid.
+  const idle: Mat3 = multiply(axisAngle(normalize([1, 0.4, 0]), -0.35), final);
+
+  const eased = easeOutCubic(progress);
+  const axis = normalize([Math.sin(seed), Math.cos(seed * 1.3), 0.6]);
+  const spin = 4 * Math.PI + ((seed % 1000) / 1000) * 2 * Math.PI;
+  const rotation: Mat3 = rollId ? multiply(final, axisAngle(axis, (1 - eased) * spin)) : idle;
+  // A couple of bounces that shrink as it lands.
+  const lift = (1 - progress) * 34 * Math.abs(Math.cos(progress * 3 * Math.PI));
+  const settled = progress >= 1;
+
+  const points = VERTICES.map((v) => apply(rotation, v));
+  const visible = FACES.map((f) => ({ f, n: apply(rotation, f.normal), c: apply(rotation, f.centroid) }))
+    .filter((x) => x.n[2] > 0.01)
+    .sort((a, b) => a.c[2] - b.c[2]);
+
+  return (
+    <svg className={`d20 die3d${className}`} viewBox="0 0 200 200" role="img" aria-label={label}>
+      <g transform={`translate(0 ${-lift})`}>
+        {visible.map(({ f, n, c }) => {
+          const poly = f.v.map((i) => project(points[i]!).join(',')).join(' ');
+          const [cx, cy] = project(c);
+          const front = settled && f === target;
+          const value = front ? text : String(f.value);
+          return (
+            <g key={f.value}>
+              <polygon className="face" points={poly} style={{ fill: shade(Math.max(0, dot(n, LIGHT))) }} />
+              <text
+                className={front ? 'total' : 'face-number'}
+                x={cx}
+                y={cy + 1}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={front ? fontSize(value) : 15 * n[2]}
+                opacity={front ? 1 : settled ? 0.3 * n[2] : 0.85 * n[2]}
+              >
+                {value}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    </svg>
+  );
+}

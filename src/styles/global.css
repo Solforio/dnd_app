@@ -1369,3 +1369,28 @@ textarea {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- 3D die --- */
+
+.die3d .face {
+  stroke-width: 1.5;
+}
+
+.die3d.crit .face {
+  filter: none;
+}
+
+.die3d.crit {
+  filter: drop-shadow(0 0 12px rgb(227 179 65 / 0.55));
+}
+
+.die3d .face-number {
+  fill: var(--text);
+  font-family: var(--font-serif);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.die3d .total {
+  pointer-events: none;
+}
