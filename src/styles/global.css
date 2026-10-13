@@ -1492,6 +1492,213 @@ textarea {
 .coins input[type='number'] {
   width: 100%;
 }
+
+/* --- Maps --- */
+
+.scope-switch {
+  flex-wrap: wrap;
+}
+
+.map-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.map-link {
+  flex: 1;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  text-decoration: none;
+}
+
+.map-link:hover {
+  color: var(--gold);
+}
+
+.app-main.map-layout {
+  max-width: 1400px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
+  .app-main.map-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+.map-trail {
+  overflow-wrap: anywhere;
+}
+
+.map-main {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.map-toolbar {
+  min-height: 40px;
+}
+
+.map-frame {
+  position: relative;
+}
+
+.map-viewport {
+  position: relative;
+  height: min(72vh, 760px);
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #0f0e1c;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.map-viewport:active {
+  cursor: grabbing;
+}
+
+.map-viewport.adding {
+  cursor: crosshair;
+  border-color: var(--gold);
+}
+
+.map-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.map-zoom {
+  position: absolute;
+  right: var(--space-2);
+  top: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.map-zoom button {
+  width: 40px;
+  padding: 0;
+  font-size: 1.2rem;
+  background: rgb(38 36 61 / 0.92);
+}
+
+/* A teardrop marker whose tip sits on the point. */
+.map-pin {
+  --pin: var(--gold);
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  padding: 0;
+  border: 2px solid #1b1a2e;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin);
+  transform: translate(-50%, -100%) rotate(-45deg);
+  transform-origin: center;
+  translate: 0 -4px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+}
+
+.map-pin.city {
+  --pin: #8fb8ff;
+}
+
+.map-pin.quest {
+  --pin: var(--green);
+}
+
+.map-pin.danger {
+  --pin: var(--red);
+}
+
+.map-pin.note {
+  --pin: #c9c3e6;
+}
+
+.map-pin.selected {
+  border-color: var(--text);
+  width: 32px;
+  height: 32px;
+  z-index: 1;
+}
+
+.map-pin:focus-visible {
+  box-shadow: var(--focus);
+}
+
+.map-pin-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: rotate(45deg) translate(14px, -50%);
+  transform-origin: 0 0;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(27 26 46 / 0.85);
+  color: var(--text);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.pin-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.pin-dot.city {
+  background: #8fb8ff;
+}
+
+.pin-dot.quest {
+  background: var(--green);
+}
+
+.pin-dot.danger {
+  background: var(--red);
+}
+
+.pin-dot.note {
+  background: #c9c3e6;
+}
+
+.map-side {
+  align-content: start;
+  min-width: 0;
+}
+
+.pin-panel {
+  border-color: var(--gold);
+}
+
+.map-missing {
+  min-height: 320px;
+  align-content: center;
+}
+
 /* --- Condition effects (sheet) --- */
 
 .effects {
@@ -1526,4 +1733,15 @@ textarea {
   padding-left: var(--space-4);
   display: grid;
   gap: var(--space-1);
+}
+
+.app-main.map-layout .span-all {
+  grid-column: 1 / -1;
+}
+
+/* The viewport follows the image's proportions, within a height range. */
+.map-viewport {
+  height: auto;
+  max-height: min(72vh, 760px);
+  min-height: 260px;
 }

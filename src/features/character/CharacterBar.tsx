@@ -1,14 +1,16 @@
 import { useId } from 'react';
+import { useNavigate } from 'react-router';
 import { useCharacterStore } from '../../data/characterStore';
 
-/** Active character in the header, with a quick switch when there are several. */
+const MANAGE = '__manage__';
+
+/** Active character in the header: quick switch, and the way into the characters page. */
 export function CharacterBar() {
   const active = useCharacterStore((s) => s.character);
   const others = useCharacterStore((s) => s.others);
   const select = useCharacterStore((s) => s.select);
+  const navigate = useNavigate();
   const id = useId();
-
-  if (others.length === 0) return <span className="header-name">{active.name || 'Senza nome'}</span>;
 
   const all = [active, ...others].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   return (
@@ -16,12 +18,21 @@ export function CharacterBar() {
       <label htmlFor={id} className="visually-hidden">
         Personaggio attivo
       </label>
-      <select id={id} className="header-select" value={active.id} onChange={(e) => select(e.target.value)}>
+      <select
+        id={id}
+        className="header-select"
+        value={active.id}
+        onChange={(e) => {
+          if (e.target.value === MANAGE) navigate('/personaggi');
+          else select(e.target.value);
+        }}
+      >
         {all.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name || 'Senza nome'}
           </option>
         ))}
+        <option value={MANAGE}>Gestisci personaggi…</option>
       </select>
     </div>
   );

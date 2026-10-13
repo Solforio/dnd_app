@@ -17,6 +17,8 @@ import { Presets } from './features/dice/Presets';
 import { HpPanel } from './features/hp/HpPanel';
 import { HpQuick } from './features/hp/HpQuick';
 import { InventoryPage } from './features/inventory/InventoryPage';
+import { MapPage } from './features/maps/MapPage';
+import { MapsPage } from './features/maps/MapsPage';
 import { PartiesPage } from './features/party/PartiesPage';
 import { PartyPage } from './features/party/PartyPage';
 import { SheetPage } from './features/sheet/SheetPage';
@@ -86,6 +88,9 @@ export function App() {
           <Route path="/scheda" element={<WithTabs><SheetPage /></WithTabs>} />
           <Route path="/zaino" element={<WithTabs><InventoryPage /></WithTabs>} />
           <Route path="/personaggi" element={<WithTabs><CharactersPage /></WithTabs>} />
+          <Route path="/mappe" element={<WithTabs><MapsPage /></WithTabs>} />
+          <Route path="/mappe/io/:mapId" element={<WithTabs><MapPage scope="personal" /></WithTabs>} />
+          <Route path="/mappe/gruppo/:partyId/:mapId" element={<WithTabs><MapPage scope="party" /></WithTabs>} />
           <Route path="/gruppo" element={<WithTabs><PartiesPage /></WithTabs>} />
           <Route path="/gruppo/:partyId" element={<WithTabs><PartyPage /></WithTabs>} />
           <Route path="*" element={<WithTabs><Home /></WithTabs>} />
