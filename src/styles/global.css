@@ -1492,3 +1492,38 @@ textarea {
 .coins input[type='number'] {
   width: 100%;
 }
+/* --- Condition effects (sheet) --- */
+
+.effects {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.effects h3 {
+  margin: 0;
+}
+
+.effect {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 0.9375rem;
+}
+
+.effect.implied {
+  border-left-color: var(--muted);
+}
+
+.effect summary {
+  cursor: pointer;
+}
+
+.effect-details {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  display: grid;
+  gap: var(--space-1);
+}

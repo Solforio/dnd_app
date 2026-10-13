@@ -1,6 +1,51 @@
 import { formatNumber } from '../../domain/format/number';
-import { CONDITION_LABELS, CONDITIONS, EXHAUSTION_MAX } from '../../domain/sheet/rules';
+import { CONDITION_EFFECTS, CONDITIONS_SOURCE, exhaustionEffects, impliedConditions } from '../../domain/sheet/conditionEffects';
+import { CONDITION_LABELS, CONDITIONS, EXHAUSTION_MAX, type ConditionId } from '../../domain/sheet/rules';
 import { editSheet, useSheet } from './sheetHooks';
+
+/** What the active conditions do: one line each, the full SRD text on demand. */
+function ActiveEffects({ conditions, exhaustion }: { conditions: ConditionId[]; exhaustion: number }) {
+  const implied = impliedConditions(conditions);
+  const exhausted = exhaustionEffects(exhaustion);
+  if (conditions.length === 0 && exhausted.length === 0) return null;
+
+  return (
+    <div className="effects" role="group" aria-labelledby="effects-title">
+      <h3 id="effects-title">Effetti attivi</h3>
+      <ul className="list compact">
+        {conditions.map((c) => {
+          const e = CONDITION_EFFECTS[c];
+          return (
+            <li key={c} className="effect">
+              <details>
+                <summary>
+                  <strong>{CONDITION_LABELS[c]}</strong>: {e.summary}
+                </summary>
+                <ul className="effect-details small">
+                  {e.details.map((d) => (
+                    <li key={d}>{d}</li>
+                  ))}
+                  {e.includes && <li>Include: {e.includes.map((i) => CONDITION_LABELS[i]).join(', ')}.</li>}
+                </ul>
+              </details>
+            </li>
+          );
+        })}
+        {implied.map((c) => (
+          <li key={`implied-${c}`} className="effect implied">
+            <strong>{CONDITION_LABELS[c]}</strong> (incluso): {CONDITION_EFFECTS[c].summary}
+          </li>
+        ))}
+        {exhausted.length > 0 && (
+          <li className="effect">
+            <strong>Indebolimento {formatNumber(exhaustion)}</strong>: {exhausted.join(' ')}
+          </li>
+        )}
+      </ul>
+      <p className="small muted">{CONDITIONS_SOURCE}</p>
+    </div>
+  );
+}
 
 /** Conditions and exhaustion are game state, so they stay clickable outside edit mode. */
 export function ConditionsCard() {
@@ -53,6 +98,7 @@ export function ConditionsCard() {
           +
         </button>
       </div>
+      <ActiveEffects conditions={s.conditions} exhaustion={s.exhaustion} />
     </section>
   );
 }
