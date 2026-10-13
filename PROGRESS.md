@@ -7,7 +7,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | Phase | State |
 |---|---|
 | 0: scaffold + module 1 (dice, HP, history) | **done**, published at https://solforio.github.io/dnd_app/ (repo Solforio/dnd_app) |
-| 1: accounts and cloud save | **code written**; rules tests (11) and sign-up/isolation check pass on the emulator; waiting for the real Firebase project |
+| 1: accounts and cloud save | **live** on Firebase project `dungeons-9446d` (Spark); rules tests (11) green on the emulator; waiting for the user to try it on Pages |
 | 2: character sheet | not started |
 | 3: parties | not started |
 | 4+: inventory, notes, codex, maps, PWA | not started |
@@ -41,7 +41,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 
 - `src/domain/account.ts`: username rules (3 to 20 chars, a-z 0-9 _ -, lowercased), synthetic email `<username>@dnd.local`, `UserDoc`.
 - `src/domain/sync.ts`: `deriveSyncStatus`, `planUpload` (fresh / identical / conflicts), `isUntouchedDefault`, `createDebouncedWriter`.
-- `src/data/firebase.ts` (+ `firebaseConfig.ts`, still `null` until the real project exists; with `null` the app is local-only), `auth.ts`, `characterRepo.ts`, `session.ts` (orchestrates local vs cloud workspace, saving, upload, sign-out, refresh on tab focus).
+- `src/data/firebase.ts` (+ `firebaseConfig.ts`: web config of `dungeons-9446d`; set it to `null` for a local-only app), `auth.ts`, `characterRepo.ts`, `session.ts` (orchestrates local vs cloud workspace, saving, upload, sign-out, refresh on tab focus).
 - `characterStore.ts` no longer persists anything: it bumps `revision` on user changes and `session.ts` saves.
 - UI: `#/accedi` (SignInPage), AccountBar + SyncBadge in the header, UploadDialog after login.
 - `firestore.rules` + `tests/rules/` (run with `npm run test:rules`, also in CI with Java 21).
@@ -54,6 +54,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 - **Cloud saving**: whole character with `setDoc`, 1.5 s debounce, flushed on hide/pagehide; last write wins. No realtime listener on own characters: one read at login, one re-read of the active character when the tab becomes visible (applied only if newer and no local edits happened meanwhile).
 - **activeCharacterId** lives in `users/{uid}`, written only when the active character changes.
 - **Sign-out** flushes and waits (max 5 s) for pending writes; if offline with unsynced writes it asks first.
+- **Real project** (2026-10-13): `dungeons-9446d`, web app `dnd-companion` created with the CLI, Firestore `(default)` STANDARD, rules deployed with `npx firebase deploy --only firestore:rules --project dungeons-9446d`. `.firebaserc` default stays `demo-dnd` on purpose, so a bare command never touches the real project. Sign-up with `<username>@dnd.local` verified on the real Auth (test account deleted).
 - **Quota estimate** (party of 6, ~4 h session): ~160 reads, ~600 to 900 writes. Well under 5% of the Spark daily limits.
 
 ## Dependencies
@@ -63,9 +64,9 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Open questions
 
-- Firebase: `<username>@dnd.local` is accepted by the Auth emulator; still to confirm on the real project.
+- None for Phase 1.
 
 ## Next step
 
-1. Done: Java 21 installed, `npm run test:rules` green, emulator flow checked. User to try the UI with `npm run emulators` + `npm run dev:emu`.
-2. User creates the Firebase project (Spark, no billing), following the checklist in the Phase 1 plan; paste the web config into `src/data/firebaseConfig.ts`; publish `firestore.rules`; add `solforio.github.io` to the authorized domains.
+1. User adds `solforio.github.io` to Auth → Settings → Authorized domains (not strictly needed for email/password, but planned).
+2. User tries sign-up, cloud save and the upload offer on https://solforio.github.io/dnd_app/; then Phase 2 (character sheet).
