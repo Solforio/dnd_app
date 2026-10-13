@@ -11,7 +11,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | 2: character sheet and multiple characters | **done** (2026-10-13) |
 | 3: parties | **done** (2026-10-13); rules (35 tests) deployed to `dungeons-9446d`; two-browser emulator check passes |
 | 4: inventory and weight | **done** (2026-10-13) |
-| maps (requested before 5 to 7) | next: plan first |
+| maps (built before 5 to 7, user request) | **done** (2026-10-14); rules (38 tests) deployed; two-user emulator check passes |
 | 5+: notes, codex, PWA | not started |
 
 ## Phase 0: what exists
@@ -116,6 +116,28 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 - **Encumbrance**: over capacity = «Sovraccarico» always; with the variant rule over ⅓ «Ingombrato» (−3 m), over ⅔ «Pesantemente ingombrato» (−6 m); shown on the sheet's speed.
 - Inventory is never shared in parties. No Firestore cost beyond the character's existing debounced save.
 
+## Maps: what exists
+
+- `src/domain/maps.ts`: `GameMap`, `PersonalMap` (pins inside), `MapPin` (x, y as 0..1 fractions), sanitizers, hierarchy (`breadcrumb`, `canNest`, `mapTree`), pan and zoom math (`fitView`, `clampView`, `zoomAt`, `toImageFraction`, `toScreen`, `centreOn`), `downscaleTarget`, `nameFromFile`.
+- `src/data/imageStore.ts`: IndexedDB `dnd-companion-images`, images keyed by **fingerprint** (SHA-256 of the original file, 32 hex); `prepareImage` downscales above 8192 px or 45 MP to JPEG 0,9.
+- `src/data/mapRepo.ts` + `mapStore.ts`: personal maps in `users/{uid}/maps/{id}` (logged out: localStorage `dnd-companion:maps`); party maps in `parties/{pid}/maps/{id}` with pins in `.../pins/{pinId}`; listeners only on the open page.
+- UI `src/features/maps/`: `MapsPage` (`#/mappe`: scope switch «Le mie mappe» / «Gruppo: …», tree, add one or more images, edit, replace image, delete), `MapPage` (`#/mappe/io/:id`, `#/mappe/gruppo/:pid/:id`: breadcrumb, «Aggiungi segnalino», pin list), `MapViewer` (pointer pan, wheel and pinch zoom, keyboard), `PinPanel`.
+- Tabs are now Tiri · Scheda · Zaino · Mappe · Gruppo; «Personaggi» is reached from the header select («Gestisci personaggi…»).
+
+## Maps decisions
+
+- **Images never leave the device** (copyright, and no Cloud Storage on Spark). A party member loads the same file locally; if the fingerprint differs the app warns and, on «Usala comunque», stores it under the map's fingerprint.
+- `faerun-images/` (the user's downloaded WotC maps, see its SOURCES.txt) is in `.gitignore`: never commit it.
+- Sub-maps: `parentId` on the map; a pin can open another map (`linkMapId`). Going back through the breadcrumb (`?da=<child>`) centres on the pin that leads to the child.
+- Party maps: created, edited and deleted by the DM only; any member adds pins; author or DM edits/deletes them. Deleting a map deletes its pins first; deleting a party deletes its maps and pins.
+- Limits (UI): 30 maps per scope, 300 pins per map. Logged-out personal maps are not uploaded at login (separate workspaces, like characters).
+- Quota: opening a party map ≈ 1 read per pin + the maps list (≤ 30); each pin change = 1 write.
+- Image evaluation (2026-10-14): best world maps «1479-faerun low-res.jpg» (5e era) and «Map - Faerun - 3E.jpg» (more roads and towns); «Sword-Coast-Map HighRes-Compressed.jpg» (8192 px) for the Sword Coast. Several city folders hold artwork rather than maps.
+
+## Condition effects (added by a background agent, 2026-10-14)
+
+- `src/domain/sheet/conditionEffects.ts`: SRD 5.1 summaries and full text of the 14 conditions and 6 exhaustion levels, implied conditions; shown under the conditions on the sheet («Effetti attivi»), with the CC-BY attribution.
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
@@ -127,12 +149,12 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Next step
 
-1. User tries the inventory, the quick HP bar and the 3D die on https://solforio.github.io/dnd_app/.
-2. Maps: write the plan (personal and party maps, sub-maps of cities, pins, Firestore layout and rules for party pins, quota) and wait for approval. The user is gathering the map images.
+1. User tries maps on https://solforio.github.io/dnd_app/ (personal, then a party map with a friend).
+2. Then Phase 5 (notes), unless the user asks otherwise.
 
 ## Backlog (user requests, 2026-10-13)
 
-Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (done), 3) Phase 4 inventory (done), 4) maps (next).
+Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (done), 3) Phase 4 inventory (done), 4) maps (done).
 
 - **Maps (requested early)**: interactive Faerûn map with city sub-maps, clickable; pins on a personal map and on a shared party map. Constraints: no WotC map images in the repo (user loads their own image, kept in the browser, or a fan map with a compatible licence); no Cloud Storage (needs Blaze), so a shared map image cannot be uploaded: pins are shared through Firestore with coordinates relative to the image, each member loads the same image locally. Plan with a quota estimate before building.
 
