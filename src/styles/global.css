@@ -1182,3 +1182,140 @@ textarea {
 .traits dd {
   margin: 0;
 }
+
+/* --- Parties --- */
+
+.party-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.party-link:hover {
+  border-color: var(--gold);
+}
+
+.party-link .result-tag {
+  margin-left: 0;
+}
+
+.gold {
+  color: var(--gold);
+}
+
+.red {
+  color: var(--red);
+}
+
+.danger-text {
+  color: var(--red);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+
+.next-session p {
+  margin-top: var(--space-1);
+}
+
+.member-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-3);
+}
+
+.member-card {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  min-width: 0;
+}
+
+.member-card.me {
+  border-color: var(--gold);
+}
+
+.member-card .result-tag {
+  margin-left: 0;
+}
+
+.stack-tight {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.hp-status {
+  font-weight: 600;
+}
+
+.hp-status.sano {
+  color: var(--green);
+}
+
+.hp-status.ferito {
+  color: var(--gold);
+}
+
+.hp-status.in-fin-di-vita,
+.hp-status.a-terra,
+.hp-status.morto {
+  color: var(--red);
+}
+
+.chip.static {
+  display: inline-grid;
+  place-items: center;
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--red);
+  font-size: 0.8125rem;
+}
+
+.share-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0 var(--space-3);
+}
+
+.quest.completed {
+  border-color: var(--green);
+}
+
+.quest.failed {
+  opacity: 0.8;
+}
+
+/* Four tabs fit at 360 px; never show a scrollbar for the 1px underline overlap. */
+.tabs {
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+@media (max-width: 420px) {
+  .tabs {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+    gap: 0;
+  }
+
+  .tab {
+    padding: 0 var(--space-3);
+  }
+}

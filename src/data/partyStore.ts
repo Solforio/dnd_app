@@ -4,6 +4,7 @@ import type { Character } from '../domain/character';
 import {
   buildSummary,
   defaultSharing,
+  LOG_PAGE,
   MEMBER_LIMIT,
   normalizeJoinCode,
   PARTY_LIMIT,
@@ -327,7 +328,7 @@ export const loadOlderLog = () =>
     const oldest = [...s.log, ...s.olderLog].at(-1);
     if (!oldest) return;
     const page = await repo.fetchOlderLog(db, party.id, oldest.createdAt);
-    usePartyStore.setState((x) => ({ olderLog: [...x.olderLog, ...page], olderDone: page.length === 0 }));
+    usePartyStore.setState((x) => ({ olderLog: [...x.olderLog, ...page], olderDone: page.length < LOG_PAGE }));
   });
 
 // --- My card: character, sharing, summary ---
