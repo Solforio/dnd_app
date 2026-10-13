@@ -1,0 +1,639 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.35rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin-bottom: var(--space-3);
+}
+
+h3 {
+  font-size: 1rem;
+  margin-bottom: var(--space-2);
+}
+
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- Layout --- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.app-main {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.column {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  min-width: 0;
+}
+
+@media (min-width: 860px) {
+  .app-main {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+.warning {
+  border: 1px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin: var(--space-3) var(--space-4) 0;
+}
+
+.app-footer {
+  padding: var(--space-4);
+  text-align: center;
+}
+
+/* --- Controls --- */
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  min-height: 40px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #1b1a2e;
+  font-weight: 600;
+}
+
+button.danger {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+button.heal {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+input,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  min-height: 40px;
+  min-width: 0;
+}
+
+input[type='number'] {
+  width: 5.5em;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.field label,
+.label {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.error {
+  color: var(--red);
+  font-size: 0.875rem;
+}
+
+/* --- Character header --- */
+
+.name-input {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  background: transparent;
+  border-color: transparent;
+  max-width: 100%;
+  width: 16em;
+}
+
+.name-input:hover {
+  border-color: var(--line);
+}
+
+/* --- d20 result --- */
+
+.result {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.d20 {
+  width: min(220px, 60vw);
+  height: auto;
+  overflow: visible;
+}
+
+.d20 .face {
+  fill: var(--surface2);
+  stroke: var(--line);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.d20 .facet {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.d20 .total {
+  fill: var(--text);
+  font-family: var(--font-serif);
+  font-weight: 700;
+}
+
+.d20.crit .face {
+  stroke: var(--gold);
+  filter: drop-shadow(0 0 10px rgb(227 179 65 / 0.7));
+}
+
+.d20.crit .total,
+.d20.crit .facet {
+  fill: var(--gold);
+  stroke: var(--gold);
+}
+
+.d20.crit .facet {
+  fill: none;
+}
+
+.d20.fumble .face,
+.d20.fumble .facet {
+  stroke: var(--red);
+}
+
+.d20.fumble .total {
+  fill: var(--red);
+}
+
+.d20.rolling {
+  animation: tumble 420ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@keyframes tumble {
+  from {
+    transform: rotate(-240deg) scale(0.7);
+  }
+  to {
+    transform: rotate(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .d20.rolling {
+    animation: none;
+  }
+}
+
+.result-line {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+.result-tag {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  margin-left: var(--space-2);
+}
+
+.result-tag.crit {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.result-tag.fumble {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* --- Dice breakdown --- */
+
+.breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.term {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.die {
+  display: inline-block;
+  min-width: 1.8em;
+  padding: 0 4px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.die.dropped {
+  color: var(--muted);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.die.nat20 {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.die.nat1 {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* --- Mode selector --- */
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.segmented legend {
+  padding: 0;
+}
+
+.segmented label {
+  flex: 1;
+  position: relative;
+  text-align: center;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0 var(--space-2);
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
+
+.segmented label + label {
+  border-left: 1px solid var(--line);
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  min-height: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.segmented label:has(input:checked) {
+  background: var(--surface2);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.segmented label:has(input:focus-visible) {
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+/* --- Dice tray --- */
+
+.tray {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: var(--space-2);
+}
+
+.tray-die {
+  display: grid;
+  grid-template-rows: auto auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.tray-die .add {
+  border: 0;
+  border-radius: 0;
+  min-height: 48px;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.tray-die .count {
+  color: var(--gold);
+  margin-left: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+}
+
+.tray-die .remove {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  min-height: 32px;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.formula-preview {
+  font-family: var(--font-mono);
+  min-height: 1.5em;
+}
+
+/* --- Presets and history --- */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.preset {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.preset .roll-preset {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  text-align: left;
+  min-width: 0;
+}
+
+.preset .roll-preset span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset code {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+.history {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.history-item.crit {
+  border-color: var(--gold);
+}
+
+.history-item.fumble {
+  border-color: var(--red);
+}
+
+.history-item .meta {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.history-item .total {
+  grid-row: span 2;
+  align-self: center;
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.history-item.crit .total {
+  color: var(--gold);
+}
+
+.history-item.fumble .total {
+  color: var(--red);
+}
+
+.history-item .breakdown {
+  justify-content: flex-start;
+}
+
+/* --- HP --- */
+
+.hp-bar {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+}
+
+.hp-bar .cur {
+  background: var(--green);
+}
+
+.hp-bar .cur.low {
+  background: var(--red);
+}
+
+.hp-bar .temp {
+  background: var(--muted);
+}
+
+.hp-numbers {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.hp-numbers .temp {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 400;
+  margin-left: var(--space-2);
+}
+
+.status-line {
+  min-height: 1.45em;
+  font-size: 0.9375rem;
+}
+
+.saves {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.save-row .label {
+  width: 6.5em;
+}
+
+.pip {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.pip[aria-pressed='true'].success {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.pip[aria-pressed='true'].failure {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.life-state {
+  font-weight: 600;
+}
+
+.life-state.dead {
+  color: var(--red);
+}
+
+.life-state.stable {
+  color: var(--green);
+}
