@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   addToHistory,
+  createCharacter,
   importCharacter as parseImport,
   newId,
   PRESET_LIMIT,
@@ -12,16 +13,19 @@ import { parseFormula } from '../domain/dice/parser';
 import { cryptoDie } from '../domain/dice/rng';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
-import { loadLocal, saveLocal } from './localStore';
 
+/**
+ * The characters on screen and every action on them. Where they are stored
+ * (browser or account) is decided by session.ts, which watches `revision`.
+ */
 interface CharacterStore {
   character: Character;
-  /** Other characters kept in storage; the picker arrives in Phase 2. */
+  /** Other characters of the same workspace; the picker arrives in Phase 2. */
   others: Character[];
-  unreadable: unknown[];
+  /** Bumped by every user change, never by loading data, so loads are not saved back. */
+  revision: number;
   /** Last HP/death-save explanation, announced through aria-live. */
   hpStatus: string;
-  storageWarning?: string;
 
   /** Rolls a formula; returns an Italian error message, or null on success. */
   roll: (formula: string, label?: string) => string | null;
@@ -41,10 +45,10 @@ interface CharacterStore {
 
   /** Replaces the current character with an imported one; returns an error message or null. */
   importJson: (json: string) => string | null;
-}
 
-const initial = loadLocal();
-const initialCharacter = initial.characters.find((c) => c.id === initial.activeCharacterId)!;
+  /** Shows a workspace loaded from storage. Not a user change: nothing is saved. */
+  showWorkspace: (characters: Character[], activeId: string | null) => void;
+}
 
 function touch(c: Character, patch: Partial<Character>): Character {
   return { ...c, ...patch, updatedAt: Date.now() };
@@ -59,12 +63,19 @@ function makeRecord(formula: string, mode: RollMode, label?: string): RollRecord
   return record;
 }
 
+export function pickActive(characters: Character[], activeId: string | null) {
+  const character = characters.find((c) => c.id === activeId) ?? characters[0] ?? createCharacter();
+  return { character, others: characters.filter((c) => c.id !== character.id) };
+}
+
 export const useCharacterStore = create<CharacterStore>((set, get) => {
-  const update = (patch: Partial<Character>) => set((s) => ({ character: touch(s.character, patch) }));
+  const update = (patch: Partial<Character>) =>
+    set((s) => ({ character: touch(s.character, patch), revision: s.revision + 1 }));
 
   const applyVitals = (change: hpRules.VitalsChange, extra: Partial<Character> = {}) =>
     set((s) => ({
       character: touch(s.character, { ...change.vitals, ...extra }),
+      revision: s.revision + 1,
       hpStatus: change.message,
     }));
 
@@ -74,11 +85,11 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
   };
 
   return {
-    character: initialCharacter,
-    others: initial.characters.filter((c) => c !== initialCharacter),
-    unreadable: initial.unreadable,
+    // Placeholder until session.ts loads the real workspace, before the first render.
+    character: createCharacter(),
+    others: [],
+    revision: 0,
     hpStatus: '',
-    storageWarning: initial.warning,
 
     roll: (formula, label) => {
       const c = get().character;
@@ -121,14 +132,15 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
 
     importJson: (json) => {
       try {
-        const imported = parseImport(json);
-        // A different character is not thrown away: it stays in storage for the Phase 2 picker.
+        const imported = { ...parseImport(json), updatedAt: Date.now() };
+        // A different character is not thrown away: it stays in the workspace for the Phase 2 picker.
         set((s) => ({
           character: imported,
           others: [
             ...(s.character.id === imported.id ? [] : [s.character]),
             ...s.others.filter((c) => c.id !== imported.id),
           ],
+          revision: s.revision + 1,
           hpStatus: `Importato «${imported.name}».`,
         }));
         return null;
@@ -136,34 +148,7 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
         return e instanceof Error ? e.message : 'Importazione non riuscita.';
       }
     },
+
+    showWorkspace: (characters, activeId) => set({ ...pickActive(characters, activeId), hpStatus: '' }),
   };
 });
-
-// --- Persistence: debounced write to localStorage, flushed when the page is hidden. ---
-
-let timer: ReturnType<typeof setTimeout> | undefined;
-
-function flush() {
-  if (timer !== undefined) clearTimeout(timer);
-  timer = undefined;
-  const { character, others, unreadable } = useCharacterStore.getState();
-  const ok = saveLocal({ characters: [character, ...others], activeCharacterId: character.id, unreadable });
-  if (!ok) {
-    useCharacterStore.setState({
-      storageWarning: 'Il browser non permette di salvare: i dati andranno persi alla chiusura. Esporta un backup.',
-    });
-  }
-}
-
-useCharacterStore.subscribe((s, prev) => {
-  if (s.character === prev.character && s.others === prev.others) return;
-  if (timer !== undefined) clearTimeout(timer);
-  timer = setTimeout(flush, 400);
-});
-
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flush();
-  });
-  window.addEventListener('pagehide', flush);
-}
