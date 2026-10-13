@@ -7,8 +7,8 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | Phase | State |
 |---|---|
 | 0: scaffold + module 1 (dice, HP, history) | **done**, published at https://solforio.github.io/dnd_app/ (repo Solforio/dnd_app) |
-| 1: accounts and cloud save | **live** on Firebase project `dungeons-9446d` (Spark); rules tests (11) green on the emulator; waiting for the user to try it on Pages |
-| 2: character sheet | not started |
+| 1: accounts and cloud save | **done**, live on Firebase project `dungeons-9446d` (Spark); confirmed working by the user |
+| 2: character sheet and multiple characters | **done** (2026-10-13); emulator and browser checks pass |
 | 3: parties | not started |
 | 4+: inventory, notes, codex, maps, PWA | not started |
 
@@ -57,16 +57,37 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 - **Real project** (2026-10-13): `dungeons-9446d`, web app `dnd-companion` created with the CLI, Firestore `(default)` STANDARD, rules deployed with `npx firebase deploy --only firestore:rules --project dungeons-9446d`. `.firebaserc` default stays `demo-dnd` on purpose, so a bare command never touches the real project. Sign-up with `<username>@dnd.local` verified on the real Auth (test account deleted).
 - **Quota estimate** (party of 6, ~4 h session): ~160 reads, ~600 to 900 writes. Well under 5% of the Spark daily limits.
 
+## Phase 2: what exists
+
+- `src/domain/sheet/rules.ts`: abilities, the 18 skills (English ids, Italian labels, linked ability), the 14 SRD conditions, limits.
+- `src/domain/sheet/sheet.ts`: `Sheet` type, `defaultSheet`, `sanitizeSheet`, calculations (`abilityMod`, `totalLevel`, `proficiencyBonus`, `saveBonus`, `skillBonus`, `passivePerception`, `initiative`, `attackBonus`, `attackFormula`, `damageFormula` with critical, `classSummary`), rests (`shortRest`, `longRestSheet`).
+- `src/domain/workspace.ts`: pure multi-character operations (`selectIn`, `addAndSelect`, `duplicate`, `removeFrom`, `CHARACTER_LIMIT` = 20).
+- Store: `selection` counter (user switched character) and `removed` queue next to `revision`; actions `createNew`, `duplicateOf`, `addImported`, `select`, `remove`, `editSheet`, `shortRest`. `session.ts` writes `activeCharacterId` on switch, flushes the previous character first, then deletes removed ones (`deleteCharacter`, 1 write each).
+- UI: tabs Tiri / Scheda / Personaggi (`TabNav`), header switcher (`CharacterBar`), `CharactersPage` (use, create, duplicate, export, import, delete with confirmation), `features/sheet/*` (play mode rolls on click, «Modifica la scheda» turns sections into forms), sticky `RollStrip` with the last roll and the d20 mode.
+- `NumberField` accepts decimals with a comma (`decimals` prop); `TextField` for labelled text.
+
+## Phase 2 decisions
+
+- **Character v2** = v1 + `sheet` (nested object). Migration 1→2 adds `defaultSheet()`; tested with a real v1 document and a v1 export file. Firestore rules unchanged (they already allow the owner to create, update and delete characters).
+- **Typed by hand**: AC, speed, max HP (inventory will compute AC later). Classes and race are free text (an SRD list may come with the codex). Multiclass supported (max 6 entries, total level capped at 20).
+- **Proficiency levels** for skills: none, half (rounded down, Jack of All Trades), proficient, expertise; plus an extra bonus per save and skill (magic items).
+- **Critical damage** doubles the dice, not the flat modifiers. Damage dice are validated with the dice parser and stored in canonical form.
+- **Metres** for speed and darkvision (Italian PHB), one decimal, shown with a comma.
+- **Rests**: the long rest (from Tiri or Scheda) also restores every feature use and removes one exhaustion level (SRD, food and drink assumed). The short rest restores «a riposo breve» uses; hit dice are not tracked yet.
+- **Conditions, exhaustion, inspiration and feature uses** are game state: clickable in play mode, no need to enter edit mode.
+- **Import** adds the character (or replaces the one with the same id after confirmation); it no longer replaces the active one.
+- **Quota**: switching character = 1 write (`activeCharacterId`); create = 1 write; delete = 1 write; sheet edits go through the existing 1.5 s debounce.
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
-Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Ask before adding anything else.
+Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Phase 2 added nothing. Ask before adding anything else.
 
 ## Open questions
 
-- None for Phase 1.
+- Hit dice tracking (spend on short rest, recover half on long rest): not in the brief, propose it if the user wants it.
 
 ## Next step
 
-1. User adds `solforio.github.io` to Auth → Settings → Authorized domains (not strictly needed for email/password, but planned).
-2. User tries sign-up, cloud save and the upload offer on https://solforio.github.io/dnd_app/; then Phase 2 (character sheet).
+1. User tries Phase 2 on https://solforio.github.io/dnd_app/ (sheet, multiple characters, account sync).
+2. Phase 3: parties (brief section 6). Write the plan first (Firestore layout, rules, join flow, quota estimate) and wait for approval: it changes the rules.

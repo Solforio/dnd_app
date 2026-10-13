@@ -56,9 +56,9 @@ Il percorso di base viene preso automaticamente dal nome del repository: se lo r
 
 ```
 src/
-  domain/      TypeScript puro e testato: dadi, PF, schema e migrazioni, formattazione dei numeri
-  data/        store dell'app e salvataggio (per ora solo locale)
-  features/    componenti React per area: dice/, hp/, character/
+  domain/      TypeScript puro e testato: dadi, PF, scheda, schema e migrazioni, formattazione dei numeri
+  data/        store dell’app, Firebase e salvataggio (browser o account)
+  features/    componenti React per area: dice/, hp/, character/, sheet/, account/
   components/  componenti condivisi
   styles/      token di design e stile globale
 ```
