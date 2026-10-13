@@ -96,6 +96,25 @@ service cloud.firestore {
           && existsAfter(memberPath(pid, uid));
         allow update: if isOwner(uid) && validMembership(request.resource.data);
       }
+
+      // Personal maps: the image stays in the browser; pins live inside the document.
+      match /maps/{mapId} {
+        function validPersonalMap(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'name', 'parentId', 'fingerprint', 'width', 'height', 'pins', 'createdAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.name, 60)
+            && (data.parentId == null || shortString(data.parentId, 64))
+            && data.fingerprint is string && data.fingerprint.size() == 32
+            && data.width is int && data.height is int
+            && data.pins is list && data.pins.size() <= 300
+            && data.createdAt is int
+            && data.updatedAt is int;
+        }
+
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validPersonalMap(request.resource.data);
+      }
     }
 
     // A code reveals its party id; codes cannot be listed, and 8 characters
@@ -252,6 +271,57 @@ service cloud.firestore {
           && request.resource.data.createdAt == resource.data.createdAt
           && (resource.data.authorUid == request.auth.uid || isPartyOwner(pid));
         allow delete: if resource.data.authorUid == request.auth.uid || isPartyOwner(pid);
+      }
+
+      // Party maps: created by the DM; every member adds pins, one document each.
+      match /maps/{mapId} {
+        function validMap(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'name', 'parentId', 'fingerprint', 'width', 'height', 'createdBy', 'createdAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.name, 60)
+            && (data.parentId == null || shortString(data.parentId, 64))
+            && data.fingerprint is string && data.fingerprint.size() == 32
+            && data.width is int && data.height is int
+            && data.createdBy is string
+            && data.createdAt is int
+            && data.updatedAt is int;
+        }
+
+        allow read: if isMember(pid);
+        allow create, update: if isPartyOwner(pid) && validMap(request.resource.data);
+        allow delete: if isPartyOwner(pid);
+
+        match /pins/{pinId} {
+          function validPin(data) {
+            return data.keys().hasOnly([
+                'schemaVersion', 'x', 'y', 'title', 'note', 'kind', 'linkMapId',
+                'authorUid', 'authorName', 'createdAt', 'updatedAt'])
+              && data.schemaVersion is int
+              && data.x is number && data.x >= 0 && data.x <= 1
+              && data.y is number && data.y >= 0 && data.y <= 1
+              && shortString(data.title, 80)
+              && shortString(data.note, 1000)
+              && data.kind in ['place', 'city', 'quest', 'danger', 'note']
+              && (data.linkMapId == null || shortString(data.linkMapId, 64))
+              && data.authorUid is string
+              && shortString(data.authorName, 20)
+              && data.createdAt is int
+              && data.updatedAt is int;
+          }
+
+          allow read: if isMember(pid);
+          allow create: if isMember(pid)
+            && validPin(request.resource.data)
+            && request.resource.data.authorUid == request.auth.uid
+            && exists(/databases/$(database)/documents/parties/$(pid)/maps/$(mapId));
+          allow update: if isMember(pid)
+            && validPin(request.resource.data)
+            && request.resource.data.authorUid == resource.data.authorUid
+            && request.resource.data.createdAt == resource.data.createdAt
+            && (resource.data.authorUid == request.auth.uid || isPartyOwner(pid));
+          allow delete: if resource.data.authorUid == request.auth.uid || isPartyOwner(pid);
+        }
       }
     }
   }

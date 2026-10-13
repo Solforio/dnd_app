@@ -319,3 +319,53 @@ describe('quests and session log', () => {
     await assertSucceeds(deleteDoc(doc(as('alice'), 'parties/p1/log/e1')));
   });
 });
+
+describe('maps', () => {
+  const FP = 'f'.repeat(32);
+  const personalMap = { schemaVersion: 1, name: 'Faerûn', parentId: null, fingerprint: FP, width: 4000, height: 3000, pins: [], createdAt: T, updatedAt: T };
+  const partyMap = { schemaVersion: 1, name: 'Faerûn', parentId: null, fingerprint: FP, width: 4000, height: 3000, createdBy: 'alice', createdAt: T, updatedAt: T };
+  const pin = (author: string) => ({
+    schemaVersion: 1,
+    x: 0.25,
+    y: 0.5,
+    title: 'Phandalin',
+    note: '',
+    kind: 'city',
+    linkMapId: null,
+    authorUid: author,
+    authorName: author,
+    createdAt: T,
+    updatedAt: T,
+  });
+
+  it('keeps personal maps private', async () => {
+    await assertSucceeds(setDoc(doc(as('alice'), 'users/alice/maps/m1'), personalMap));
+    await assertFails(getDoc(doc(as('bob'), 'users/alice/maps/m1')));
+    await assertFails(setDoc(doc(as('bob'), 'users/alice/maps/m2'), personalMap));
+    await assertFails(setDoc(doc(as('alice'), 'users/alice/maps/m3'), { ...personalMap, fingerprint: 'short' }));
+  });
+
+  it('lets only the DM create party maps, and members read them', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('alice'), 'parties/p1/maps/m1'), partyMap));
+    await assertFails(setDoc(doc(as('bob'), 'parties/p1/maps/m2'), partyMap));
+    await assertSucceeds(getDocs(collection(as('bob'), 'parties/p1/maps')));
+    await assertFails(getDocs(collection(as('eve'), 'parties/p1/maps')));
+  });
+
+  it('lets members add their own pins, and the author or DM change them', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await setDoc(doc(as('alice'), 'parties/p1/maps/m1'), partyMap);
+    await assertSucceeds(setDoc(doc(as('bob'), 'parties/p1/maps/m1/pins/x1'), pin('bob')));
+    await assertFails(setDoc(doc(as('bob'), 'parties/p1/maps/m1/pins/x2'), pin('carol')));
+    await assertFails(setDoc(doc(as('bob'), 'parties/p1/maps/m1/pins/x3'), { ...pin('bob'), x: 1.5 }));
+    await assertFails(setDoc(doc(as('bob'), 'parties/p1/maps/nomap/pins/x4'), pin('bob')));
+    await assertFails(setDoc(doc(as('eve'), 'parties/p1/maps/m1/pins/x5'), pin('eve')));
+    await assertSucceeds(updateDoc(doc(as('bob'), 'parties/p1/maps/m1/pins/x1'), { title: 'Phandalin (rovine)' }));
+    await assertSucceeds(updateDoc(doc(as('alice'), 'parties/p1/maps/m1/pins/x1'), { note: 'Attenti ai Cappe Rosse' }));
+    await assertFails(updateDoc(doc(as('carol'), 'parties/p1/maps/m1/pins/x1'), { title: 'Mio' }));
+    await assertFails(deleteDoc(doc(as('carol'), 'parties/p1/maps/m1/pins/x1')));
+    await assertSucceeds(deleteDoc(doc(as('alice'), 'parties/p1/maps/m1/pins/x1')));
+  });
+});
