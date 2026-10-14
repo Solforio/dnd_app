@@ -74,6 +74,8 @@ export interface Sharing {
   hp: HpVisibility;
   /** Show my portrait (never the full-body picture) to the party. */
   portrait: boolean;
+  /** Let the Master read my whole sheet (read-only). Off by default. */
+  fullSheet: boolean;
   fields: Record<SharedField, boolean>;
 }
 
@@ -81,6 +83,7 @@ export function defaultSharing(): Sharing {
   return {
     hp: 'status',
     portrait: true,
+    fullSheet: false,
     fields: Object.fromEntries(SHARED_FIELDS.map((f) => [f, f === 'conditions'])) as Record<SharedField, boolean>,
   };
 }
@@ -92,6 +95,7 @@ export function sanitizeSharing(raw: unknown): Sharing {
   return {
     hp: asOneOf(s.hp, HP_VISIBILITIES, d.hp),
     portrait: asBool(s.portrait, d.portrait),
+    fullSheet: asBool(s.fullSheet, d.fullSheet),
     fields: Object.fromEntries(SHARED_FIELDS.map((f) => [f, asBool(fields[f], d.fields[f])])) as Record<SharedField, boolean>,
   };
 }

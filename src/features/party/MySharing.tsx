@@ -59,6 +59,15 @@ export function MySharing({ membership, isDm, onLeft }: { membership: Membership
         Mostra il mio ritratto agli altri (non la figura intera)
       </label>
 
+      <label className="inline">
+        <input
+          type="checkbox"
+          checked={sharing.fullSheet}
+          onChange={async (e) => report(await setMySharing(pid, { ...sharing, fullSheet: e.target.checked }))}
+        />
+        Mostra la mia scheda completa al Master (sola lettura: caratteristiche, attacchi, incantesimi, zaino)
+      </label>
+
       <fieldset className="plain">
         <legend className="label">Cos’altro condividi (nome, classe e livello sono sempre visibili)</legend>
         <div className="share-grid">
@@ -74,7 +83,10 @@ export function MySharing({ membership, isDm, onLeft }: { membership: Membership
           ))}
         </div>
       </fieldset>
-      <p className="small muted">Zaino, note e tutto il resto della scheda non sono mai condivisi.</p>
+      <p className="small muted">
+        Gli altri giocatori vedono solo quello che spunti qui. La scheda completa la vede soltanto il Master, e solo se lo scegli: il
+        Master non può modificarla.
+      </p>
 
       <div className="row">
         {isDm ? (

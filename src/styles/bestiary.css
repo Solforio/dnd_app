@@ -191,3 +191,42 @@ html[data-theme='parchment'] body[data-section='bestiario'] {
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: var(--space-1) var(--space-3);
 }
+
+/* --- Master area --- */
+
+.master-player {
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--leaf-sm);
+}
+
+.master-panel {
+  --accent: #c8503e;
+  --accent-bright: #ee8a76;
+  --accent-deep: #8f2a1c;
+  --accent-rgb: 200 80 62;
+}
+
+.readout-part h3 {
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.readout .block-abilities > div {
+  gap: 0;
+}
+
+/* --- Treasure and trades --- */
+
+.treasure-card {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--leaf-sm);
+  background: rgb(var(--accent-rgb) / 0.06);
+}
+
+.loot-row {
+  align-items: flex-end;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dashed var(--line);
+}

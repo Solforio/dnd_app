@@ -19,7 +19,10 @@ import {
   type Firestore,
   type Unsubscribe,
 } from 'firebase/firestore';
+import type { Character } from '../domain/character';
 import { cryptoRandomBelow } from '../domain/dice/rng';
+import { TRADE_SCHEMA_VERSION, TREASURE_SCHEMA_VERSION, sanitizeTrade, sanitizeTreasure, LOOT_LIMITS, type LootItem, type Trade, type TradeStatus, type Treasure } from '../domain/loot';
+import { MASTER_VIEW_SCHEMA_VERSION, readMasterView } from '../domain/masterView';
 import { PORTRAIT_SCHEMA_VERSION, sanitizePortraits } from '../domain/portrait';
 import {
   generateJoinCode,
@@ -30,6 +33,7 @@ import {
   sanitizeMembership,
   sanitizeParty,
   sanitizeQuest,
+  sanitizeSharing,
   sanitizeSummary,
   type LogEntry,
   type Member,
@@ -59,6 +63,8 @@ const membershipRef = (db: Firestore, uid: string, pid: string) => doc(db, 'user
 const questsOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'quests');
 const logOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'log');
 const bestiaryOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'bestiary');
+const treasureOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'treasure');
+const tradesOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'trades');
 
 const newCode = () => generateJoinCode(cryptoRandomBelow);
 
@@ -180,9 +186,27 @@ export function deleteSharedPortrait(db: Firestore, pid: string, uid: string): P
   return deleteDoc(portraitRef(db, pid, uid));
 }
 
-/** Leaving: the shared portrait (best effort), then the member card and the private membership. */
+// --- The full sheet shown to the Master: parties/{pid}/members/{uid}/masterview/sheet ---
+
+const masterRef = (db: Firestore, pid: string, uid: string) => doc(db, 'parties', pid, 'members', uid, 'masterview', 'sheet');
+
+export function saveMasterView(db: Firestore, pid: string, uid: string, view: Character): Promise<void> {
+  return setDoc(masterRef(db, pid, uid), { schemaVersion: MASTER_VIEW_SCHEMA_VERSION, character: view, updatedAt: Date.now() });
+}
+
+export function deleteMasterView(db: Firestore, pid: string, uid: string): Promise<void> {
+  return deleteDoc(masterRef(db, pid, uid));
+}
+
+/** The DM follows one player's shared sheet while the window is open: one read, then one per change. */
+export function watchMasterView(db: Firestore, pid: string, uid: string, onView: (c: Character | null) => void, onError: () => void): Unsubscribe {
+  return onSnapshot(masterRef(db, pid, uid), (s) => onView(s.exists() ? readMasterView(s.data()) : null), onError);
+}
+
+/** Leaving: the shared portrait and sheet (best effort), then the member card and the private membership. */
 export async function leaveParty(db: Firestore, uid: string, pid: string): Promise<void> {
   await deleteSharedPortrait(db, pid, uid).catch(() => {});
+  await deleteMasterView(db, pid, uid).catch(() => {});
   const b = writeBatch(db);
   b.delete(memberRef(db, pid, uid));
   b.delete(membershipRef(db, uid, pid));
@@ -201,13 +225,14 @@ export function forgetMembership(db: Firestore, uid: string, pid: string): Promi
 export async function deleteParty(db: Firestore, uid: string, party: Party): Promise<void> {
   const pid = party.id;
   await deleteAllPartyMaps(db, pid);
-  const [quests, log, members, bestiary] = await Promise.all([
+  const [quests, log, members, bestiary, treasure] = await Promise.all([
     getDocs(questsOf(db, pid)),
     getDocs(logOf(db, pid)),
     getDocs(collection(db, 'parties', pid, 'members')),
     getDocs(bestiaryOf(db, pid)),
+    getDocs(treasureOf(db, pid)),
   ]);
-  const refs: DocumentReference[] = [...quests.docs, ...log.docs, ...bestiary.docs].map((d) => d.ref);
+  const refs: DocumentReference[] = [...quests.docs, ...log.docs, ...bestiary.docs, ...treasure.docs].map((d) => d.ref);
   for (let i = 0; i < refs.length; i += 450) {
     const b = writeBatch(db);
     refs.slice(i, i + 450).forEach((r) => b.delete(r));
@@ -216,6 +241,8 @@ export async function deleteParty(db: Firestore, uid: string, party: Party): Pro
   // Shared portraits live under the member cards and are not removed with them.
   const withPortrait = members.docs.filter((d) => sanitizeSummary(d.data().summary).portraitAt);
   for (const d of withPortrait) await deleteSharedPortrait(db, pid, d.id).catch(() => {});
+  const withSheet = members.docs.filter((d) => sanitizeSharing(d.data().sharing).fullSheet);
+  for (const d of withSheet) await deleteMasterView(db, pid, d.id).catch(() => {});
   const b = writeBatch(db);
   members.docs.filter((d) => d.id !== uid).forEach((d) => b.delete(d.ref));
   b.delete(codeRef(db, party.joinCode));
@@ -262,6 +289,7 @@ export async function transferOwnership(db: Firestore, pid: string, fromUid: str
 
 export async function removeMember(db: Firestore, pid: string, uid: string): Promise<void> {
   await deleteSharedPortrait(db, pid, uid).catch(() => {});
+  await deleteMasterView(db, pid, uid).catch(() => {});
   return deleteDoc(memberRef(db, pid, uid));
 }
 
@@ -304,6 +332,89 @@ export function deleteQuest(db: Firestore, pid: string, id: string) {
 export async function fetchClosedQuests(db: Firestore, pid: string): Promise<Quest[]> {
   const snap = await getDocs(query(questsOf(db, pid), where('status', 'in', ['completed', 'failed'] satisfies QuestStatus[])));
   return snap.docs.map((d) => sanitizeQuest(d.id, d.data())).sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+// --- Treasure: parties/{pid}/treasure/{id} ---
+
+export function watchTreasure(db: Firestore, pid: string, on: (t: Treasure[]) => void, onError: () => void): Unsubscribe {
+  return onSnapshot(query(treasureOf(db, pid), limit(LOOT_LIMITS.treasures)), (s) => on(s.docs.map((d) => sanitizeTreasure(d.id, d.data()))), onError);
+}
+
+export function createTreasure(db: Firestore, pid: string, t: Treasure): Promise<void> {
+  return setDoc(doc(treasureOf(db, pid), t.id), {
+    schemaVersion: TREASURE_SCHEMA_VERSION,
+    title: t.title,
+    note: t.note,
+    coins: t.coins,
+    items: t.items,
+    to: t.to,
+    status: 'open',
+    claimedBy: null,
+    claimedByName: '',
+    claimedAt: 0,
+    createdBy: t.createdBy,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+  });
+}
+
+/** One write by the member who takes it; the rules let only the first one through. */
+export function claimTreasure(db: Firestore, pid: string, id: string, uid: string, username: string): Promise<void> {
+  const now = Date.now();
+  return updateDoc(doc(treasureOf(db, pid), id), { status: 'claimed', claimedBy: uid, claimedByName: username, claimedAt: now, updatedAt: now });
+}
+
+export function deleteTreasure(db: Firestore, pid: string, id: string): Promise<void> {
+  return deleteDoc(doc(treasureOf(db, pid), id));
+}
+
+// --- Trades: parties/{pid}/trades/{id} ---
+
+/** The offers I made and the ones made to me (two small queries, merged), while the party page is open. */
+export function watchTrades(db: Firestore, pid: string, uid: string, on: (t: Trade[]) => void, onError: () => void): Unsubscribe {
+  const mine = new Map<string, Trade>();
+  const theirs = new Map<string, Trade>();
+  const emit = () => on([...new Map([...mine, ...theirs]).values()].sort((a, b) => b.createdAt - a.createdAt));
+  const listen = (field: 'from' | 'to', into: Map<string, Trade>) =>
+    onSnapshot(
+      query(tradesOf(db, pid), where(field, '==', uid), limit(60)),
+      (s) => {
+        into.clear();
+        s.docs.forEach((d) => into.set(d.id, sanitizeTrade(d.id, d.data())));
+        emit();
+      },
+      onError,
+    );
+  const subs = [listen('from', mine), listen('to', theirs)];
+  return () => subs.forEach((u) => u());
+}
+
+export function createTrade(db: Firestore, pid: string, t: Trade): Promise<void> {
+  return setDoc(doc(tradesOf(db, pid), t.id), {
+    schemaVersion: TRADE_SCHEMA_VERSION,
+    from: t.from,
+    fromName: t.fromName,
+    to: t.to,
+    toName: t.toName,
+    item: t.item satisfies LootItem,
+    status: 'pending',
+    settled: false,
+    note: t.note,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+  });
+}
+
+export function setTradeStatus(db: Firestore, pid: string, id: string, status: TradeStatus): Promise<void> {
+  return updateDoc(doc(tradesOf(db, pid), id), { status, updatedAt: Date.now() });
+}
+
+export function settleTrade(db: Firestore, pid: string, id: string): Promise<void> {
+  return updateDoc(doc(tradesOf(db, pid), id), { settled: true, updatedAt: Date.now() });
+}
+
+export function deleteTrade(db: Firestore, pid: string, id: string): Promise<void> {
+  return deleteDoc(doc(tradesOf(db, pid), id));
 }
 
 // --- Bestiary: parties/{pid}/bestiary/{entryId} ---

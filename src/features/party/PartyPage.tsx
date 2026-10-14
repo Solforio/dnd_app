@@ -3,6 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { closeParty, deleteParty, forgetParty, openParty, usePartyStore } from '../../data/partyStore';
 import { useSession } from '../../data/session';
 import { PartyBestiary } from '../bestiary/PartyBestiary';
+import { TradesCard } from '../loot/TradesCard';
+import { TreasureShelf } from '../loot/TreasureShelf';
+import { MasterPanel } from '../master/MasterPanel';
+import { watchLoot } from '../../data/lootStore';
 import { MemberCards } from './MemberCards';
 import { MySharing } from './MySharing';
 import { PartiesPage } from './PartiesPage';
@@ -75,6 +79,12 @@ export function PartyPage() {
     return closeParty;
   }, [partyId, phase]);
 
+  // Treasure and trades of this party, listened to only while the page is open.
+  useEffect(() => {
+    if (phase !== 'cloud') return;
+    return watchLoot(partyId);
+  }, [partyId, phase]);
+
   if (phase !== 'cloud' || !user) return <PartiesPage />;
 
   const back = () => navigate('/gruppo');
@@ -122,6 +132,9 @@ export function PartyPage() {
       </nav>
       <PartyHeader party={party} isDm={isDm} />
       <MemberCards pid={party.id} members={members} myUid={user.uid} isDm={isDm} />
+      {isDm && <MasterPanel pid={party.id} members={members} myUid={user.uid} />}
+      <TreasureShelf pid={party.id} uid={user.uid} />
+      <TradesCard pid={party.id} members={members} myUid={user.uid} />
       <PartyBestiary pid={party.id} uid={user.uid} isDm={isDm} />
       <div className="column">
         <QuestBoard isDm={isDm} />

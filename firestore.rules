@@ -293,6 +293,126 @@ service cloud.firestore {
         allow delete: if isOwner(uid) || isPartyOwner(pid);
       }
 
+      // The full sheet a player chooses to show the Master: readable by its owner and by the party's DM only.
+      match /members/{uid}/masterview/{doc} {
+        function validMasterView(data) {
+          return data.keys().hasOnly(['schemaVersion', 'character', 'updatedAt'])
+            && data.schemaVersion is int
+            && data.character is map
+            && data.updatedAt is int;
+        }
+
+        allow read: if isOwner(uid) || isPartyOwner(pid);
+        allow create, update: if isOwner(uid) && isMember(pid) && doc == 'sheet' && validMasterView(request.resource.data);
+        allow delete: if isOwner(uid) || isPartyOwner(pid);
+      }
+
+      // Treasure the DM prepares. A member takes what is for them (or for everyone) with one write; the rules
+      // let only the first take succeed, because after it the treasure is no longer open.
+      match /treasure/{treasureId} {
+        function validCoins(c) {
+          return c is map && c.size() == 5
+            && c.cp is int && c.cp >= 0 && c.cp <= 10000000
+            && c.sp is int && c.sp >= 0 && c.sp <= 10000000
+            && c.ep is int && c.ep >= 0 && c.ep <= 10000000
+            && c.gp is int && c.gp >= 0 && c.gp <= 10000000
+            && c.pp is int && c.pp >= 0 && c.pp <= 10000000;
+        }
+
+        function validTreasure(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'title', 'note', 'coins', 'items', 'to', 'status', 'claimedBy', 'claimedByName',
+              'claimedAt', 'createdBy', 'createdAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.title, 80) && data.title.size() > 0
+            && shortString(data.note, 300)
+            && validCoins(data.coins)
+            && data.items is list && data.items.size() <= 20
+            && (data.to == null || shortString(data.to, 64))
+            && data.status in ['open', 'claimed']
+            && (data.claimedBy == null || shortString(data.claimedBy, 64))
+            && shortString(data.claimedByName, 60)
+            && data.claimedAt is int
+            && shortString(data.createdBy, 64)
+            && data.createdAt is int
+            && data.updatedAt is int;
+        }
+
+        allow read: if isMember(pid);
+        allow create: if isPartyOwner(pid)
+          && validTreasure(request.resource.data)
+          && request.resource.data.status == 'open'
+          && request.resource.data.claimedBy == null
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if
+          // The DM edits a treasure that nobody has taken yet.
+          (isPartyOwner(pid)
+            && resource.data.status == 'open'
+            && validTreasure(request.resource.data)
+            && request.resource.data.status == 'open'
+            && request.resource.data.claimedBy == null)
+          // A member takes it: only the claim fields change.
+          || (isMember(pid)
+            && resource.data.status == 'open'
+            && (resource.data.to == null || resource.data.to == request.auth.uid)
+            && validTreasure(request.resource.data)
+            && request.resource.data.status == 'claimed'
+            && request.resource.data.claimedBy == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['status', 'claimedBy', 'claimedByName', 'claimedAt', 'updatedAt']));
+        allow delete: if isPartyOwner(pid);
+      }
+
+      // Offers between two members. The offering app takes the object out of the backpack, so it lives here
+      // until it is accepted or comes back; only the two people involved can read or change an offer.
+      match /trades/{tradeId} {
+        function validTrade(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'from', 'fromName', 'to', 'toName', 'item', 'status', 'settled', 'note',
+              'createdAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.from, 64) && shortString(data.fromName, 60)
+            && shortString(data.to, 64) && shortString(data.toName, 60)
+            && data.item is map
+            && data.status in ['pending', 'accepted', 'declined', 'cancelled']
+            && data.settled is bool
+            && shortString(data.note, 200)
+            && data.createdAt is int
+            && data.updatedAt is int;
+        }
+
+        function onlyChanges(keys) {
+          return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+        }
+
+        allow read: if isMember(pid)
+          && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+        allow create: if isMember(pid)
+          && validTrade(request.resource.data)
+          && request.resource.data.from == request.auth.uid
+          && request.resource.data.to != request.auth.uid
+          && exists(memberPath(pid, request.resource.data.to))
+          && request.resource.data.status == 'pending'
+          && request.resource.data.settled == false;
+        allow update: if isMember(pid) && validTrade(request.resource.data) && (
+          // The receiver accepts or declines.
+          (resource.data.status == 'pending' && resource.data.to == request.auth.uid
+            && request.resource.data.status in ['accepted', 'declined'] && onlyChanges(['status', 'updatedAt']))
+          // The sender takes the offer back.
+          || (resource.data.status == 'pending' && resource.data.from == request.auth.uid
+            && request.resource.data.status == 'cancelled' && onlyChanges(['status', 'updatedAt']))
+          // The receiver has put the object in the backpack.
+          || (resource.data.status == 'accepted' && resource.data.to == request.auth.uid && resource.data.settled == false
+            && request.resource.data.settled == true && onlyChanges(['settled', 'updatedAt']))
+          // The sender has put it back.
+          || (resource.data.status in ['declined', 'cancelled'] && resource.data.from == request.auth.uid && resource.data.settled == false
+            && request.resource.data.settled == true && onlyChanges(['settled', 'updatedAt']))
+        );
+        allow delete: if isMember(pid)
+          && resource.data.settled == true
+          && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      }
+
       // The party's bestiary: creatures met in the campaign and what the group has learned about them.
       // Every member adds and fills it in; the author or the DM deletes an entry.
       match /bestiary/{entryId} {

@@ -20,6 +20,7 @@ import {
 import { useCharacterStore } from './characterStore';
 import { getFirebase } from './firebase';
 import { ensurePortraits, usePortraitStore } from './portraitStore';
+import { buildMasterView, masterViewKey } from '../domain/masterView';
 import * as repo from './partyRepo';
 import { useSession } from './session';
 
@@ -118,6 +119,7 @@ useSession.subscribe((s, prev) => {
   } else if (s.phase !== 'cloud') {
     closeParty();
     lastSent.clear();
+    lastMaster.clear();
     timers.forEach(clearTimeout);
     timers.clear();
     usePartyStore.setState(initial);
@@ -185,6 +187,7 @@ export function leaveParty(pid: string): Promise<string | null> {
 function forgetLocally(pid: string) {
   if (usePartyStore.getState().openId === pid) closeParty();
   lastSent.delete(pid);
+  lastMaster.delete(pid);
   setMemberships((list) => list.filter((m) => m.partyId !== pid));
 }
 
@@ -354,6 +357,11 @@ export const setMySharing = (pid: string, sharing: Sharing) =>
     if (!c || !m) throw new PartyError(OFFLINE);
     const patch: Partial<repo.CardInput> = { sharing };
     if (character) patch.summary = buildSummary(character, sharing, await syncSharedPortrait(c, pid, character.id, sharing));
+    if (character) await syncMasterView(c, pid, character, sharing);
+    if (m.sharing.fullSheet && !sharing.fullSheet) {
+      await repo.deleteMasterView(c.db, pid, c.user.uid).catch(() => {});
+      lastMaster.delete(pid);
+    }
     setMemberships((list) => list.map((x) => (x.partyId === pid ? { ...x, sharing } : x)));
     await repo.updateMyCard(c.db, c.user.uid, pid, patch);
     if (patch.summary) lastSent.set(pid, patch.summary);
@@ -381,6 +389,19 @@ async function syncSharedPortrait(
   return undefined;
 }
 
+/** The shared full sheet last written, per party (a text, to skip a write when nothing changed). */
+const lastMaster = new Map<string, string>();
+
+/** Keeps the sheet shown to the Master up to date, when the player has chosen to share it. */
+async function syncMasterView(c: NonNullable<ReturnType<typeof ctx>>, pid: string, character: Character, sharing: Sharing): Promise<void> {
+  if (!sharing.fullSheet) return;
+  const view = buildMasterView(character);
+  const key = masterViewKey(view);
+  if (lastMaster.get(pid) === key) return;
+  await repo.saveMasterView(c.db, pid, c.user.uid, view);
+  lastMaster.set(pid, key);
+}
+
 /** Last summary known to be on the server, per party. */
 const lastSent = new Map<string, MemberSummary>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -397,6 +418,7 @@ async function publish(pid: string) {
     const m = usePartyStore.getState().memberships?.find((x) => x.partyId === pid);
     const character = m && findCharacter(m.characterId);
     if (!m || !character || character.id !== character0.id) return;
+    await syncMasterView(c, pid, character, m.sharing);
     const summary = buildSummary(character, m.sharing, portraitAt);
     if (sameSummary(lastSent.get(pid), summary)) return;
     const before = lastSent.get(pid);

@@ -475,3 +475,186 @@ describe('the party bestiary', () => {
     await assertSucceeds(deleteDoc(doc(as('bob'), path('e2'))));
   });
 });
+
+describe('the full sheet shared with the Master', () => {
+  const view = { schemaVersion: 1, character: { id: 'c1', name: 'Thalia' }, updatedAt: T };
+  const path = (uid: string) => `parties/p1/members/${uid}/masterview/sheet`;
+
+  it('is written by its owner and read by the owner and the DM only', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), view));
+    await assertSucceeds(getDoc(doc(as('bob'), path('bob'))));
+    await assertSucceeds(getDoc(doc(as('alice'), path('bob'))));
+    await assertFails(getDoc(doc(as('carol'), path('bob'))));
+    await assertFails(getDoc(doc(as('eve'), path('bob'))));
+  });
+
+  it('cannot be written for someone else, not even by the DM, and not by a stranger', async () => {
+    await seedParty();
+    await assertFails(setDoc(doc(as('alice'), path('bob')), view));
+    await assertFails(setDoc(doc(as('eve'), path('eve')), view));
+    await assertFails(setDoc(doc(as('bob'), 'parties/p1/members/bob/masterview/other'), view));
+  });
+
+  it('is checked: known fields only, a character map', async () => {
+    await seedParty();
+    const db = as('bob');
+    await assertFails(setDoc(doc(db, path('bob')), { ...view, extra: 1 }));
+    await assertFails(setDoc(doc(db, path('bob')), { ...view, character: 'text' }));
+  });
+
+  it('is taken down by its owner or by the DM', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), view));
+    await assertFails(deleteDoc(doc(as('carol'), path('bob'))));
+    await assertSucceeds(deleteDoc(doc(as('alice'), path('bob'))));
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), view));
+    await assertSucceeds(deleteDoc(doc(as('bob'), path('bob'))));
+  });
+});
+
+describe('treasure', () => {
+  const coins = (gp = 0) => ({ cp: 0, sp: 0, ep: 0, gp, pp: 0 });
+  const treasure = (over: Record<string, unknown> = {}) => ({
+    schemaVersion: 1,
+    title: 'Bottino del drago',
+    note: '',
+    coins: coins(50),
+    items: [{ name: 'Spada +1', category: 'weapon', quantity: 1, weightLb: 3, valueCp: 100000, notes: '', requiresAttunement: false }],
+    to: null,
+    status: 'open',
+    claimedBy: null,
+    claimedByName: '',
+    claimedAt: 0,
+    createdBy: 'alice',
+    createdAt: T,
+    updatedAt: T,
+    ...over,
+  });
+  const path = (id: string) => `parties/p1/treasure/${id}`;
+  const claim = (uid: string) => ({ status: 'claimed', claimedBy: uid, claimedByName: uid, claimedAt: T + 1, updatedAt: T + 1 });
+
+  it('is created, edited and deleted by the DM only, and read by the whole party', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('alice'), path('t1')), treasure()));
+    await assertFails(setDoc(doc(as('bob'), path('t2')), treasure({ createdBy: 'bob' })));
+    await assertSucceeds(updateDoc(doc(as('alice'), path('t1')), { title: 'Altro nome', updatedAt: T + 1 }));
+    await assertSucceeds(getDoc(doc(as('bob'), path('t1'))));
+    await assertFails(getDoc(doc(as('eve'), path('t1'))));
+    await assertFails(deleteDoc(doc(as('bob'), path('t1'))));
+    await assertSucceeds(deleteDoc(doc(as('alice'), path('t1'))));
+  });
+
+  it('is checked: coins, title, items, a created treasure is open', async () => {
+    await seedParty();
+    const db = as('alice');
+    await assertFails(setDoc(doc(db, path('t1')), treasure({ title: '' })));
+    await assertFails(setDoc(doc(db, path('t1')), treasure({ coins: coins(-1) })));
+    await assertFails(setDoc(doc(db, path('t1')), treasure({ coins: { gp: 5 } })));
+    await assertFails(setDoc(doc(db, path('t1')), treasure({ items: Array(21).fill({}) })));
+    await assertFails(setDoc(doc(db, path('t1')), treasure({ status: 'claimed', claimedBy: 'bob' })));
+    await assertFails(setDoc(doc(db, path('t1')), treasure({ extra: 1 })));
+  });
+
+  it('lets a member take what is for everyone, once, changing nothing but the claim', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await setDoc(doc(as('alice'), path('t1')), treasure());
+    await assertFails(updateDoc(doc(as('bob'), path('t1')), { ...claim('bob'), coins: coins(500) }));
+    await assertFails(updateDoc(doc(as('bob'), path('t1')), { ...claim('carol') }));
+    await assertSucceeds(updateDoc(doc(as('bob'), path('t1')), claim('bob')));
+    await assertFails(updateDoc(doc(as('carol'), path('t1')), claim('carol')));
+    await assertFails(updateDoc(doc(as('alice'), path('t1')), { title: 'Troppo tardi', updatedAt: T + 2 }));
+  });
+
+  it('lets only the member it is for take an assigned treasure', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await setDoc(doc(as('alice'), path('t1')), treasure({ to: 'bob' }));
+    await assertFails(updateDoc(doc(as('carol'), path('t1')), claim('carol')));
+    await assertFails(updateDoc(doc(as('eve'), path('t1')), claim('eve')));
+    await assertSucceeds(updateDoc(doc(as('bob'), path('t1')), claim('bob')));
+  });
+});
+
+describe('trades between members', () => {
+  const item = { name: 'Pozione di cura', category: 'consumable', quantity: 2, weightLb: 0.5, valueCp: 5000, notes: '', requiresAttunement: false };
+  const trade = (over: Record<string, unknown> = {}) => ({
+    schemaVersion: 1,
+    from: 'bob',
+    fromName: 'bob',
+    to: 'carol',
+    toName: 'carol',
+    item,
+    status: 'pending',
+    settled: false,
+    note: '',
+    createdAt: T,
+    updatedAt: T,
+    ...over,
+  });
+  const path = (id: string) => `parties/p1/trades/${id}`;
+  const base = async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+  };
+
+  it('is offered by a member to another member, as themselves', async () => {
+    await base();
+    await assertSucceeds(setDoc(doc(as('bob'), path('x1')), trade()));
+    await assertFails(setDoc(doc(as('bob'), path('x2')), trade({ from: 'carol', to: 'bob' })));
+    await assertFails(setDoc(doc(as('bob'), path('x3')), trade({ to: 'bob' })));
+    await assertFails(setDoc(doc(as('bob'), path('x4')), trade({ to: 'eve' })));
+    await assertFails(setDoc(doc(as('eve'), path('x5')), trade({ from: 'eve' })));
+    await assertFails(setDoc(doc(as('bob'), path('x6')), trade({ status: 'accepted' })));
+    await assertFails(setDoc(doc(as('bob'), path('x7')), trade({ settled: true })));
+  });
+
+  it('is read only by the two people involved', async () => {
+    await base();
+    await setDoc(doc(as('bob'), path('x1')), trade());
+    await assertSucceeds(getDoc(doc(as('bob'), path('x1'))));
+    await assertSucceeds(getDoc(doc(as('carol'), path('x1'))));
+    await assertFails(getDoc(doc(as('alice'), path('x1'))));
+    await assertFails(getDoc(doc(as('eve'), path('x1'))));
+  });
+
+  it('is accepted or declined by the receiver, cancelled by the sender, nobody else', async () => {
+    await base();
+    await setDoc(doc(as('bob'), path('x1')), trade());
+    await assertFails(updateDoc(doc(as('bob'), path('x1')), { status: 'accepted', updatedAt: T + 1 }));
+    await assertFails(updateDoc(doc(as('alice'), path('x1')), { status: 'accepted', updatedAt: T + 1 }));
+    await assertFails(updateDoc(doc(as('carol'), path('x1')), { status: 'accepted', item: { ...item, quantity: 99 }, updatedAt: T + 1 }));
+    await assertFails(updateDoc(doc(as('carol'), path('x1')), { status: 'cancelled', updatedAt: T + 1 }));
+    await assertSucceeds(updateDoc(doc(as('carol'), path('x1')), { status: 'accepted', updatedAt: T + 1 }));
+    await setDoc(doc(as('bob'), path('x2')), trade());
+    await assertSucceeds(updateDoc(doc(as('bob'), path('x2')), { status: 'cancelled', updatedAt: T + 1 }));
+    await setDoc(doc(as('bob'), path('x3')), trade());
+    await assertSucceeds(updateDoc(doc(as('carol'), path('x3')), { status: 'declined', updatedAt: T + 1 }));
+  });
+
+  it('is settled by the side that gets the object: the receiver after accepting, the sender after a refusal', async () => {
+    await base();
+    await setDoc(doc(as('bob'), path('x1')), trade());
+    await updateDoc(doc(as('carol'), path('x1')), { status: 'accepted', updatedAt: T + 1 });
+    await assertFails(updateDoc(doc(as('bob'), path('x1')), { settled: true, updatedAt: T + 2 }));
+    await assertSucceeds(updateDoc(doc(as('carol'), path('x1')), { settled: true, updatedAt: T + 2 }));
+
+    await setDoc(doc(as('bob'), path('x2')), trade());
+    await updateDoc(doc(as('carol'), path('x2')), { status: 'declined', updatedAt: T + 1 });
+    await assertFails(updateDoc(doc(as('carol'), path('x2')), { settled: true, updatedAt: T + 2 }));
+    await assertSucceeds(updateDoc(doc(as('bob'), path('x2')), { settled: true, updatedAt: T + 2 }));
+  });
+
+  it('can be deleted only once settled, by one of the two', async () => {
+    await base();
+    await setDoc(doc(as('bob'), path('x1')), trade());
+    await assertFails(deleteDoc(doc(as('bob'), path('x1'))));
+    await updateDoc(doc(as('carol'), path('x1')), { status: 'declined', updatedAt: T + 1 });
+    await updateDoc(doc(as('bob'), path('x1')), { settled: true, updatedAt: T + 2 });
+    await assertFails(deleteDoc(doc(as('alice'), path('x1'))));
+    await assertSucceeds(deleteDoc(doc(as('carol'), path('x1'))));
+  });
+});
