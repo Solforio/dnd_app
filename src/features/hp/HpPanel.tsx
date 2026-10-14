@@ -3,6 +3,7 @@ import { NumberField } from '../../components/NumberField';
 import { useCharacterStore } from '../../data/characterStore';
 import { formatNumber } from '../../domain/format/number';
 import { HP_LIMIT } from '../../domain/hp/hp';
+import { LevelUpSection } from '../sheet/LevelUp';
 import { DeathSaves } from './DeathSaves';
 
 export function HpPanel() {
@@ -66,6 +67,14 @@ export function HpPanel() {
         <button type="button" disabled={n <= 0} onClick={() => apply(gainTemp)}>
           PF temporanei
         </button>
+        <button
+          type="button"
+          disabled={n <= 0}
+          title="Alza i PF massimi e quelli attuali della quantità scritta"
+          onClick={() => apply((v) => editHp({ max: hp.max + v, cur: hp.cur + v }))}
+        >
+          Aumenta PF massimi
+        </button>
       </div>
 
       <p className="status-line" role="status" aria-live="polite">
@@ -73,7 +82,7 @@ export function HpPanel() {
       </p>
 
       <details>
-        <summary className="small muted">Modifica i valori a mano</summary>
+        <summary>Scrivi a mano PF attuali, massimi e temporanei</summary>
         <div className="row" style={{ marginTop: 'var(--space-2)' }}>
           <NumberField label="PF attuali" value={hp.cur} min={0} max={hp.max} onCommit={(cur) => editHp({ cur })} />
           <NumberField label="PF massimi" value={hp.max} min={1} max={HP_LIMIT} onCommit={(max) => editHp({ max })} />
@@ -85,7 +94,10 @@ export function HpPanel() {
             onCommit={(temp) => editHp({ temp })}
           />
         </div>
+        <p className="small muted">Scrivi il valore e premi Invio (o tocca fuori dal campo) per confermarlo.</p>
       </details>
+
+      <LevelUpSection />
 
       <DeathSaves />
 

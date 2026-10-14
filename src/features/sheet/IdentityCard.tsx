@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { NumberField } from '../../components/NumberField';
 import { TextField } from '../../components/TextField';
@@ -9,6 +9,7 @@ import { LEVEL_MAX } from '../../domain/sheet/rules';
 import { capacityLb, carriedWeightLb, encumbrance, speedPenaltyM } from '../../domain/inventory';
 import { formatNumber, formatSigned } from '../../domain/format/number';
 import { CharacterAvatar } from '../portrait/Avatar';
+import { LevelUpSection } from './LevelUp';
 import { PictureControls } from '../portrait/PictureControls';
 import { editSheet, rollFrom, useSheet } from './sheetHooks';
 import { usePortraitStore } from '../../data/portraitStore';
@@ -28,6 +29,7 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
   const hp = useCharacterStore((s) => s.character.hp);
   const rename = useCharacterStore((s) => s.rename);
   const characterId = useCharacterStore((s) => s.character.id);
+  const [levelNote, setLevelNote] = useState('');
   const hasPortrait = usePortraitStore((s) => !!s.byId[characterId]?.portrait);
   const s = useSheet();
   const init = initiative(s);
@@ -84,6 +86,13 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
               onChange={(alignment) => editSheet((x) => ({ ...x, alignment }))}
             />
           </div>
+          <p className="small muted">Cambiare il livello qui non modifica i PF. Per salire di livello e guadagnare PF usa «Sali di livello».</p>
+          {levelNote && (
+            <p className="small" role="status">
+              {levelNote}
+            </p>
+          )}
+          <LevelUpSection />
           <PictureControls characterId={characterId} kind="portrait" hasPicture={hasPortrait} />
           <fieldset className="plain stack">
             <legend className="label">Classi</legend>
@@ -94,7 +103,15 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
                 <div className="row class-row" key={i}>
                   <TextField label="Classe" value={c.name} maxLength={40} onChange={(name) => setClass({ name })} />
                   <TextField label="Sottoclasse" value={c.subclass} maxLength={60} onChange={(subclass) => setClass({ subclass })} />
-                  <NumberField label="Livello" value={c.level} min={1} max={LEVEL_MAX} onCommit={(level) => setClass({ level })} />
+                  <NumberField label="Livello" value={c.level} min={1} max={LEVEL_MAX} onCommit={(level) => {
+                      setClass({ level });
+                      setLevelNote(
+                        level > c.level
+                          ? 'Livello alzato, ma i PF massimi non sono cambiati: usa «Sali di livello» qui sotto per aggiungerli.'
+                          : '',
+                      );
+                    }}
+                  />
                   <div className="field">
                     <label htmlFor={`hitdie-${i}`}>Dado vita</label>
                     <select
