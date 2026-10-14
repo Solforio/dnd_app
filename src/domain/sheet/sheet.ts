@@ -1,5 +1,6 @@
 import { formulaToText, parseFormula, DICE_LIMITS } from '../dice/parser';
 import type { FormulaTerm } from '../dice/types';
+import { defaultCombat, sanitizeCombat, type Combat } from './combat';
 import { isHitDie, recoverHitDice } from './hitDice';
 import { defaultSpellcasting, restoreSlots, SLOT_LEVELS, SPELLCASTING_LIMITS, type ClassSpells, type Spellcasting } from './spellSlots';
 import { asArray, asBool, asInt, asOneOf, asRecord, asString } from '../schema/sanitize';
@@ -94,6 +95,7 @@ export interface Sheet {
   darkvisionM: number;
   otherProficiencies: string;
   spellcasting: Spellcasting;
+  combat: Combat;
 }
 
 export const SHEET_LIMITS = {
@@ -135,6 +137,7 @@ export function defaultSheet(): Sheet {
     darkvisionM: 0,
     otherProficiencies: '',
     spellcasting: defaultSpellcasting(),
+    combat: defaultCombat(),
   };
 }
 
@@ -267,6 +270,7 @@ export function sanitizeSheet(raw: unknown, newId: () => string): Sheet {
     darkvisionM: asMetres(s.darkvisionM, 0),
     otherProficiencies: asString(s.otherProficiencies, SHEET_LIMITS.otherProficiencies),
     spellcasting: sanitizeSpellcasting(s.spellcasting),
+    combat: sanitizeCombat(s.combat, newId),
   };
 }
 
@@ -393,6 +397,7 @@ export function longRestSheet(s: Sheet): RestResult {
     ...r,
     hitDice: dice.recovered,
     restored: [...r.restored, ...slots.restored],
-    sheet: { ...slots.sheet, exhaustion: Math.max(0, s.exhaustion - 1) },
+    // A long rest ends any fight: no round counter, no running effects.
+    sheet: { ...slots.sheet, combat: defaultCombat(), exhaustion: Math.max(0, s.exhaustion - 1) },
   };
 }

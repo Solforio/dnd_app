@@ -1,8 +1,17 @@
 import { useCharacterStore } from '../../data/characterStore';
+import { capacityLb, carriedWeightLb, encumbrance, speedPenaltyM } from '../../domain/inventory';
 import type { Sheet } from '../../domain/sheet/sheet';
 
 export function useSheet(): Sheet {
   return useCharacterStore((s) => s.character.sheet);
+}
+
+/** Metres of speed lost to the weight carried (variant encumbrance), 0 when none. */
+export function useSpeedPenalty(): number {
+  const strength = useCharacterStore((s) => s.character.sheet.abilities.str);
+  const inventory = useCharacterStore((s) => s.character.inventory);
+  const variant = inventory.settings.variantEncumbrance;
+  return speedPenaltyM(encumbrance(carriedWeightLb(inventory), capacityLb(strength, inventory.settings), variant), variant);
 }
 
 export function editSheet(fn: (s: Sheet) => Sheet) {

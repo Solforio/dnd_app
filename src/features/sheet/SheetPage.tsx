@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useCharacterStore } from '../../data/characterStore';
 import { AbilitiesCard } from './AbilitiesCard';
 import { AttacksCard } from './AttacksCard';
-import { ConditionsCard } from './ConditionsCard';
+import { Link } from 'react-router';
 import { FeaturesCard } from './FeaturesCard';
 import { FigureCard } from './FigureCard';
 import { HitDiceCard } from './HitDiceCard';
@@ -30,8 +30,16 @@ export function SheetPage() {
         <FigureCard />
       </div>
       <div className="column">
-        <AttacksCard editing={editing} />
-        <ConditionsCard />
+        {editing ? (
+          <AttacksCard editing />
+        ) : (
+          <section className="card stack">
+            <p className="small">
+              Attacchi, condizioni e incantesimi pronti sono nella schermata <Link to="/combattimento">Combattimento</Link>. Per
+              modificare gli attacchi usa «Modifica la scheda».
+            </p>
+          </section>
+        )}
         <FeaturesCard editing={editing} />
         <TraitsCard editing={editing} />
         <HitDiceCard />

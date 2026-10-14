@@ -25,7 +25,7 @@ function Pips({ label, max, left, onSpend, onRecover }: { label: string; max: nu
           <button
             key={i}
             type="button"
-            className={`pip${available ? ' on' : ''}`}
+            className={`slot-pip${available ? ' on' : ''}`}
             aria-label={available ? `Usa uno slot, ${label}` : `Recupera uno slot, ${label}`}
             onClick={available ? onSpend : onRecover}
           />

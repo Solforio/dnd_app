@@ -1,6 +1,7 @@
 import { asArray, asBool, asInt, asRecord, asString } from './schema/sanitize';
 import type { Ability } from './sheet/rules';
-import { abilityMod, type ClassEntry, type Sheet } from './sheet/sheet';
+import { addEffect, effectFromSpell } from './sheet/combat';
+import { abilityMod, sheetProficiency, type ClassEntry, type Sheet } from './sheet/sheet';
 import { casterKindOf, pactLeft, pactOf, slotRows, slotsFromClasses, spendPact, spendSlot, type ClassSpells, type Spellcasting } from './sheet/spellSlots';
 
 /** A spell of the SRD 5.1 catalogue (public/srd/spells.json, English text). */
@@ -254,7 +255,12 @@ export function castable(s: Sheet, sc: SpellClass, spells: Catalogue): string[] 
 
 // --- Casting ---
 
-export type CastChoice = { kind: 'slot'; level: number; left: number } | { kind: 'pact'; level: number; left: number } | { kind: 'ritual' };
+export type CastChoice =
+  | { kind: 'slot'; level: number; left: number }
+  | { kind: 'pact'; level: number; left: number }
+  | { kind: 'ritual' }
+  /** A cantrip: no slot to spend. */
+  | { kind: 'free' };
 
 /** Ways to cast a spell now: a slot of its level or higher, a pact slot, or as a ritual. */
 export function castOptions(s: Sheet, spell: Spell): CastChoice[] {
@@ -272,4 +278,34 @@ export function castSpell(s: Sheet, choice: CastChoice): Sheet {
   if (choice.kind === 'slot') return spendSlot(s, choice.level);
   if (choice.kind === 'pact') return spendPact(s);
   return s;
+}
+
+export interface CastResult {
+  sheet: Sheet;
+  /** The effect now running because of the cast (only during a combat), or null. */
+  tracked: boolean;
+  /** The concentration spell that ended to make room for this one. */
+  dropped: string | null;
+}
+
+/** Casts a spell; during a combat a spell that lasts leaves an effect on the list, counted down by the turn button. */
+export function castWithEffect(s: Sheet, choice: CastChoice, spell: Spell, newId: () => string): CastResult {
+  const cast = castSpell(s, choice);
+  const effect = cast.combat.active ? effectFromSpell(spell, newId()) : null;
+  if (!effect) return { sheet: cast, tracked: false, dropped: null };
+  const added = addEffect(cast, effect);
+  return { sheet: added.sheet, tracked: added.error === null, dropped: added.dropped };
+}
+
+export interface SpellStats {
+  /** Save DC: 8 + proficiency bonus + the casting ability modifier. */
+  dc: number;
+  /** Spell attack bonus: proficiency bonus + the casting ability modifier. */
+  attack: number;
+}
+
+export function spellStats(s: Sheet, sc: SpellClass): SpellStats {
+  const mod = abilityMod(s.abilities[sc.ability]);
+  const prof = sheetProficiency(s);
+  return { dc: 8 + prof + mod, attack: prof + mod };
 }

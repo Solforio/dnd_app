@@ -8,6 +8,7 @@ import { SignInPage } from './features/account/SignInPage';
 import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
 import { CharactersPage } from './features/character/CharactersPage';
+import { CombatPage } from './features/combat/CombatPage';
 import { GrimoirePage } from './features/grimoire/GrimoirePage';
 import { D20Result } from './features/dice/D20Result';
 import { DiceTray } from './features/dice/DiceTray';
@@ -87,6 +88,7 @@ export function App() {
         <Routes>
           <Route path="/accedi" element={<SignInPage />} />
           <Route path="/scheda" element={<WithTabs><SheetPage /></WithTabs>} />
+          <Route path="/combattimento" element={<WithTabs><CombatPage /></WithTabs>} />
           <Route path="/grimorio" element={<WithTabs><GrimoirePage /></WithTabs>} />
           <Route path="/zaino" element={<WithTabs><InventoryPage /></WithTabs>} />
           <Route path="/personaggi" element={<WithTabs><CharactersPage /></WithTabs>} />

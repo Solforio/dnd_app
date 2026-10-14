@@ -1,6 +1,7 @@
 import spellsJson from '../../public/srd/spells.json?raw';
 import { describe, expect, it } from 'vitest';
 import { defaultSheet, sanitizeSheet, type ClassEntry, type Sheet } from './sheet/sheet';
+import { startCombat } from './sheet/combat';
 import { spendSlot } from './sheet/spellSlots';
 import {
   addSpell,
@@ -8,6 +9,8 @@ import {
   castable,
   castOptions,
   castSpell,
+  castWithEffect,
+  spellStats,
   listOf,
   maxSpellLevelOf,
   removeSpell,
@@ -196,5 +199,51 @@ describe('sanitizing the lists', () => {
     expect(s.spellcasting.lists.bad).toEqual({ known: [], prepared: [] });
     expect(s.spellcasting.ignoreLimits).toBe(true);
     expect(sanitizeSheet({}, () => 'x').spellcasting.lists).toEqual({});
+  });
+});
+
+describe('casting during a combat', () => {
+  let n = 0;
+  const id = () => `e${++n}`;
+  const slot = { kind: 'slot', level: 2, left: 3 } as const;
+
+  it('leaves the spell running as an effect, counted in rounds', () => {
+    const s = startCombat(sheetOf(cls('Mago', 5)));
+    const r = castWithEffect(s, slot, spell('invisibility'), id);
+    expect(r.tracked).toBe(true);
+    expect(r.sheet.combat.effects[0]).toMatchObject({ name: 'Invisibility', concentration: true, spellId: 'invisibility' });
+    expect(r.sheet.spellcasting.slotsUsed[1]).toBe(1);
+  });
+
+  it('a second concentration spell ends the first', () => {
+    let s = startCombat(sheetOf(cls('Mago', 5)));
+    s = castWithEffect(s, slot, spell('invisibility'), id).sheet;
+    const r = castWithEffect(s, slot, spell('hold-person'), id);
+    expect(r.dropped).toBe('Invisibility');
+    expect(r.sheet.combat.effects.map((e) => e.name)).toEqual(['Hold Person']);
+  });
+
+  it('adds nothing for an instantaneous spell, or outside a combat, but still spends the slot', () => {
+    const fighting = startCombat(sheetOf(cls('Mago', 5)));
+    expect(castWithEffect(fighting, { kind: 'slot', level: 3, left: 2 }, spell('fireball'), id).tracked).toBe(false);
+    const calm = sheetOf(cls('Mago', 5));
+    const r = castWithEffect(calm, slot, spell('invisibility'), id);
+    expect(r.tracked).toBe(false);
+    expect(r.sheet.combat.effects).toEqual([]);
+    expect(r.sheet.spellcasting.slotsUsed[1]).toBe(1);
+  });
+
+  it('a cantrip with a duration is tracked and costs nothing', () => {
+    const r = castWithEffect(startCombat(sheetOf(cls('Mago', 1))), { kind: 'free' }, spell('guidance'), id);
+    expect(r.sheet.spellcasting.slotsUsed).toEqual(Array(9).fill(0));
+  });
+});
+
+describe('spell save DC and attack bonus', () => {
+  it('is 8 + proficiency + ability modifier, and proficiency + modifier', () => {
+    const s = sheetOf(cls('Mago', 5), { int: 16 }); // proficiency +3, modifier +3
+    expect(spellStats(s, classOf(s))).toEqual({ dc: 14, attack: 6 });
+    const c = sheetOf(cls('Chierico', 1), { wis: 10 });
+    expect(spellStats(c, classOf(c))).toEqual({ dc: 10, attack: 2 });
   });
 });

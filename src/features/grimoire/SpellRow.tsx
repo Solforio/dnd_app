@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { castOptions, castSpell, type CastChoice, type Spell } from '../../domain/spells';
+import { newId } from '../../domain/character';
+import { castOptions, castWithEffect, type CastChoice, type Spell } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
 import { levelLabel } from './labels';
 
@@ -76,19 +77,29 @@ export function SpellRow({
   const [open, setOpen] = useState(false);
   const options = canCast ? castOptions(s, spell) : [];
   const cast = (o: CastChoice) => {
-    editSheet((x) => castSpell(x, o));
+    const r = castWithEffect(s, o, spell, newId);
+    editSheet(() => r.sheet);
     setOpen(false);
-    onCast(
+    const how =
       o.kind === 'ritual'
-        ? `${spell.name} lanciato come rituale.`
-        : `${spell.name} lanciato con uno slot di ${o.level}° livello${o.kind === 'pact' ? ' del Patto' : ''}.`,
-    );
+        ? 'come rituale'
+        : o.kind === 'free'
+          ? ''
+          : `con uno slot di ${o.level}° livello${o.kind === 'pact' ? ' del Patto' : ''}`;
+    const effect = r.tracked ? ' Aggiunto agli effetti attivi.' : '';
+    const dropped = r.dropped ? ` Concentrazione su ${r.dropped} interrotta.` : '';
+    onCast(`${spell.name} lanciato${how ? ` ${how}` : ''}.${effect}${dropped}`);
   };
 
   return (
     <li className="spell-row">
       <SpellDetails spell={spell} />
       <div className="row spell-actions">
+        {canCast && spell.level === 0 && (
+          <button type="button" onClick={() => cast({ kind: 'free' })}>
+            Lancia
+          </button>
+        )}
         {canCast && spell.level > 0 && (
           <button
             type="button"

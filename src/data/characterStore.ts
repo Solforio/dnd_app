@@ -13,6 +13,7 @@ import { cryptoDie } from '../domain/dice/rng';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
 import type { Inventory } from '../domain/inventory';
+import { concentrationDC, dropConcentration } from '../domain/sheet/combat';
 import { hitDicePools, hpGain, levelUp, spendHitDie } from '../domain/sheet/hitDice';
 import { abilityMod, longRestSheet, shortRest, type RestResult, type Sheet } from '../domain/sheet/sheet';
 import { formatSigned } from '../domain/format/number';
@@ -43,6 +44,8 @@ interface CharacterStore {
   removed: string[];
   /** Last HP/death-save explanation, announced through aria-live. */
   hpStatus: string;
+  /** After damage while concentrating: the save to keep the spell, until the player answers it. */
+  concentrationCheck: { dc: number; spell: string } | null;
 
   /** Rolls a formula; returns an Italian error message, or null on success. */
   roll: (formula: string, label?: string) => string | null;
@@ -57,6 +60,8 @@ interface CharacterStore {
   editInventory: (fn: (inv: Inventory) => Inventory) => void;
 
   damage: (amount: number) => void;
+  /** Closes the concentration check; with `lost` the concentration effect ends. */
+  resolveConcentration: (lost: boolean) => void;
   heal: (amount: number) => void;
   gainTemp: (amount: number) => void;
   longRest: () => void;
@@ -127,6 +132,7 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
       selection: s.selection + 1,
       revision: saveActive ? s.revision + 1 : s.revision,
       hpStatus: '',
+      concentrationCheck: null,
     }));
 
   /** Adds a brand-new character (created, duplicated or imported) as active, saved right away. */
@@ -146,6 +152,7 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     selection: 0,
     removed: [],
     hpStatus: '',
+    concentrationCheck: null,
 
     roll: (formula, label) => {
       const c = get().character;
@@ -170,7 +177,36 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     editSheet: (fn) => update({ sheet: fn(get().character.sheet) }),
     editInventory: (fn) => update({ inventory: fn(get().character.inventory) }),
 
-    damage: (n) => applyVitals(hpRules.applyDamage(vitals(), n)),
+    damage: (n) => {
+      const change = hpRules.applyDamage(vitals(), n);
+      applyVitals(change);
+      const c = get().character;
+      const concentrating = c.sheet.combat.effects.find((e) => e.concentration);
+      if (!concentrating || n <= 0) return;
+      if (c.hp.cur === 0) {
+        // Falling unconscious ends concentration with no save.
+        const lost = dropConcentration(c.sheet);
+        set((s) => ({
+          character: touch(s.character, { sheet: lost.sheet }),
+          revision: s.revision + 1,
+          hpStatus: `${s.hpStatus} Concentrazione su ${lost.dropped.join(', ')} persa: sei a terra.`,
+          concentrationCheck: null,
+        }));
+      } else {
+        set({ concentrationCheck: { dc: concentrationDC(n), spell: concentrating.name } });
+      }
+    },
+    resolveConcentration: (lost) => {
+      if (lost) {
+        const r = dropConcentration(get().character.sheet);
+        set((s) => ({
+          character: touch(s.character, { sheet: r.sheet }),
+          revision: s.revision + 1,
+          hpStatus: r.dropped.length > 0 ? `Concentrazione su ${r.dropped.join(', ')} persa.` : s.hpStatus,
+          concentrationCheck: null,
+        }));
+      } else set({ concentrationCheck: null });
+    },
     heal: (n) => applyVitals(hpRules.applyHealing(vitals(), n)),
     gainTemp: (n) => applyVitals(hpRules.gainTempHp(vitals(), n)),
     longRest: () => {
@@ -251,6 +287,6 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
       else set({ others: next.others, removed: [...s.removed, id] });
     },
 
-    showWorkspace: (characters, activeId) => set({ ...pickActive(characters, activeId), hpStatus: '' }),
+    showWorkspace: (characters, activeId) => set({ ...pickActive(characters, activeId), hpStatus: '', concentrationCheck: null }),
   };
 });

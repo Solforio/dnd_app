@@ -6,12 +6,11 @@ import { useCharacterStore } from '../../data/characterStore';
 import { d20Formula, initiative, passivePerception, sheetProficiency, SHEET_LIMITS, totalLevel } from '../../domain/sheet/sheet';
 import { hitDieOf, HIT_DIE_OPTIONS } from '../../domain/sheet/hitDice';
 import { LEVEL_MAX } from '../../domain/sheet/rules';
-import { capacityLb, carriedWeightLb, encumbrance, speedPenaltyM } from '../../domain/inventory';
 import { formatNumber, formatSigned } from '../../domain/format/number';
 import { CharacterAvatar } from '../portrait/Avatar';
 import { LevelUpSection } from './LevelUp';
 import { PictureControls } from '../portrait/PictureControls';
-import { editSheet, rollFrom, useSheet } from './sheetHooks';
+import { editSheet, rollFrom, useSheet, useSpeedPenalty } from './sheetHooks';
 import { usePortraitStore } from '../../data/portraitStore';
 
 function Stat({ label, children }: { label: string; children: ReactNode }) {
@@ -33,11 +32,7 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
   const hasPortrait = usePortraitStore((s) => !!s.byId[characterId]?.portrait);
   const s = useSheet();
   const init = initiative(s);
-  const inventory = useCharacterStore((x) => x.character.inventory);
-  const penalty = speedPenaltyM(
-    encumbrance(carriedWeightLb(inventory), capacityLb(s.abilities.str, inventory.settings), inventory.settings.variantEncumbrance),
-    inventory.settings.variantEncumbrance,
-  );
+  const penalty = useSpeedPenalty();
 
   const subtitle = [
     s.race,
