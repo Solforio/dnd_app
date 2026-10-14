@@ -7,8 +7,9 @@ const MAX_PER_DIE = 20;
 type Counts = Record<(typeof DICE)[number], number>;
 const EMPTY: Counts = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0, 100: 0 };
 
-function buildFormula(counts: Counts, modifier: number): string {
-  const parts = DICE.filter((s) => counts[s] > 0).map((s) => `${counts[s]}d${s}`);
+/** Dice in the order they were first chosen: the first one is the die the 3D animation shows. */
+function buildFormula(counts: Counts, order: readonly number[], modifier: number): string {
+  const parts = order.filter((s) => counts[s as keyof Counts] > 0).map((s) => `${counts[s as keyof Counts]}d${s}`);
   if (parts.length === 0) return '';
   const mod = modifier > 0 ? `+${modifier}` : modifier < 0 ? `${modifier}` : '';
   return parts.join('+') + mod;
@@ -17,14 +18,18 @@ function buildFormula(counts: Counts, modifier: number): string {
 export function DiceTray() {
   const roll = useCharacterStore((s) => s.roll);
   const addPreset = useCharacterStore((s) => s.addPreset);
-  const [counts, setCounts] = useState<Counts>(EMPTY);
+  const [{ counts, order }, setPick] = useState<{ counts: Counts; order: number[] }>({ counts: EMPTY, order: [] });
   const [modifier, setModifier] = useState(0);
   const [saving, setSaving] = useState(false);
   const modId = useId();
 
-  const formula = buildFormula(counts, modifier);
+  const formula = buildFormula(counts, order, modifier);
   const change = (sides: keyof Counts, delta: number) =>
-    setCounts((c) => ({ ...c, [sides]: Math.min(MAX_PER_DIE, Math.max(0, c[sides] + delta)) }));
+    setPick((p) => {
+      const next = Math.min(MAX_PER_DIE, Math.max(0, p.counts[sides] + delta));
+      const rest = p.order.filter((x) => x !== sides);
+      return { counts: { ...p.counts, [sides]: next }, order: next === 0 ? rest : p.order.includes(sides) ? p.order : [...rest, sides] };
+    });
 
   return (
     <section className="card stack" aria-labelledby="tray-title">
@@ -97,7 +102,7 @@ export function DiceTray() {
             className="ghost"
             disabled={!formula && modifier === 0}
             onClick={() => {
-              setCounts(EMPTY);
+              setPick({ counts: EMPTY, order: [] });
               setModifier(0);
             }}
           >

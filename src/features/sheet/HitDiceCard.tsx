@@ -124,6 +124,7 @@ function LevelUpForm({ onClose }: { onClose: () => void }) {
 /** Hit dice (spend to heal, regained on a long rest) and the level-up flow that raises max HP. */
 export function HitDiceCard() {
   const s = useSheet();
+  const full = useCharacterStore((x) => x.character.hp.cur >= x.character.hp.max);
   const [open, setOpen] = useState(false);
   const pools = hitDicePools(s);
   const atCap = totalLevel(s.classes) >= LEVEL_MAX;
@@ -140,7 +141,8 @@ export function HitDiceCard() {
             </span>
             <button
               type="button"
-              disabled={p.left <= 0}
+              disabled={p.left <= 0 || full}
+              title={full ? 'I PF sono già al massimo' : undefined}
               aria-label={`Spendi un dado vita d${p.die} di ${p.name}`}
               onClick={() => spend(p.index)}
             >

@@ -72,7 +72,9 @@ export function Die3D({ rollId, text, sides = 20, natural, className, label }: P
 
   const seed = hash(rollId ?? 'idle');
   const target = solid.faces.find((f) => f.value === natural) ?? solid.faces[seed % solid.faces.length]!;
-  const final = faceToViewerOf(solid, target);
+  const upright = faceToViewerOf(solid, target);
+  // The d4 and d6 would look like flat shapes face-on: rest them slightly tilted so the sides show.
+  const final: Mat3 = solid.sides <= 6 ? multiply(axisAngle(normalize([1, 0.7, 0]), -0.35), upright) : upright;
   // Before the first roll the die rests slightly turned, so it reads as a solid.
   const idle: Mat3 = multiply(axisAngle(normalize([1, 0.4, 0]), -0.35), final);
 

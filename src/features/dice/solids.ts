@@ -165,12 +165,15 @@ export function solidFor(sides: number): Solid {
 
 /**
  * The rotation that turns `face` towards the viewer (normal → +z) with a
- * vertex pointing up (an edge, on the cube, so the square sits flat).
+ * vertex pointing up (the long tip of a d10 kite, an edge on the cube so the square sits flat).
  */
 export function faceToViewerOf(solid: Solid, face: Face): Mat3 {
   const z = face.normal;
-  const first = solid.vertices[face.v[0]!]!;
-  const target = solid.sides === 6 ? mean([first, solid.vertices[face.v[1]!]!]) : first;
+  const corners = face.v.map((i) => solid.vertices[i]!);
+  const first = corners[0]!;
+  // A kite stands on its long axis (the farthest corner up); a square on an edge; the rest on a corner.
+  const farthest = corners.reduce((best, p) => (Math.hypot(...sub(p, face.centroid)) > Math.hypot(...sub(best, face.centroid)) + 1e-9 ? p : best), first);
+  const target = solid.sides === 6 ? mean([first, corners[1]!]) : solid.sides === 10 ? farthest : first;
   const toTarget = sub(target, face.centroid);
   const y = normalize(sub(toTarget, scale(z, dot(toTarget, z))));
   const x = cross(y, z);
