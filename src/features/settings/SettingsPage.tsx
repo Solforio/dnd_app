@@ -49,6 +49,7 @@ function StorageSection() {
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [message, setMessage] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const refresh = async () => {
     setUsage(await imageUsage());
@@ -132,6 +133,30 @@ function StorageSection() {
             Cancella
           </button>
         )}
+      </Row>
+      <Row
+        title="Esporta tutto"
+        hint="Un PDF decorato con la scheda di ogni personaggio, come sulla carta: tratti, incantesimi con il testo e zaino."
+      >
+        <button
+          type="button"
+          disabled={exporting}
+          onClick={async () => {
+            setExporting(true);
+            setMessage('Preparo il PDF…');
+            try {
+              const { exportAllPdf } = await import('../../pdf/exportAll');
+              const n = await exportAllPdf();
+              setMessage(`PDF pronto: ${n === 1 ? 'un personaggio' : `${formatNumber(n)} personaggi`}.`);
+            } catch {
+              setMessage('Non sono riuscito a creare il PDF. Riprova.');
+            } finally {
+              setExporting(false);
+            }
+          }}
+        >
+          {exporting ? 'Un momento…' : 'Esporta PDF'}
+        </button>
       </Row>
       <Row title="Backup dei personaggi" hint="Esporta e importa i personaggi come file.">
         <Link className="button-link" to="/personaggi">
@@ -271,7 +296,7 @@ export function SettingsPage() {
       <section className="card stack" aria-labelledby="set-about">
         <h2 id="set-about">Informazioni e licenze</h2>
         <p className="small">
-          Compagno D&amp;D è un’app non ufficiale, fatta da fan: non è affiliata né approvata da Wizards of the Coast. Le immagini delle mappe
+          D&amp;D Pocket è un’app non ufficiale, fatta da fan: non è affiliata né approvata da Wizards of the Coast. Le immagini delle mappe
           che carichi restano tue: non vengono pubblicate.
         </p>
         <p className="small">

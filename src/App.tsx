@@ -115,7 +115,7 @@ export function App() {
       <header className="app-header">
         <h1>
           <DieIcon sides={20} size={30} className="brand-die" />
-          Compagno D&amp;D
+          D&amp;D Pocket
         </h1>
         {ready && <CharacterBar />}
         <AccountBar />

@@ -1,4 +1,4 @@
-# Compagno D&D
+# D&D Pocket
 
 App web gratuita per giocatori di D&D 5e: dadi, punti ferita, scheda, zaino, note, bestiario, mappe e gruppo condiviso.
 Il brief completo è in `cowork-prompt-dnd-app.md`, lo stato del lavoro in `PROGRESS.md`.

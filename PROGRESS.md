@@ -339,10 +339,18 @@ Recommended order: 1 and 2 (an afternoon, no data changes), then 3 and 5, then 4
 
 Status: nothing started yet (only registered).
 
+## PDF export and the name "D&D Pocket" (2026-10-14)
+
+- The app is officially called **D&D Pocket** (title, README, header, credits). Storage keys (`dnd-companion:*`, IndexedDB `dnd-companion-*`) keep the old prefix on purpose: renaming would drop users' data.
+- Settings → Dati e spazio → **Esporta tutto**: one decorated A4 PDF with every character, built in the browser (`src/pdf/`, lazy-loaded; main bundle unchanged). Per character: front page (classic sheet), traits/features/notes (with portrait and figure if present), spells (slots, DC, list by level, then full SRD text; skipped for non-casters), backpack (coins, totals, items by container). A cover with an index only when there are several characters.
+- Layout in `draw.ts` (top-left coordinates over pdf-lib), `flow.ts` (columns and page breaks), pages in `sheetFront/Back/Spells/Pack.ts`, `cover.ts`, `exportPdf.ts` (pure `buildPdf`), `exportAll.ts` (browser: gathers data, fonts, download). Cinzel fonts embedded as subsets; body text uses standard PDF fonts (unsupported glyphs are replaced).
+- Layout was checked by rendering the pages to images (Windows.Data.Pdf), not only by tests. Tests: page counts, cover, non-caster, missing catalogue, portrait embedding, odd glyphs.
+- New dependencies, asked for explicitly by the user: `pdf-lib` 1.17.1 and `@pdf-lib/fontkit` 1.1.1 (both MIT).
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
-Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Phase 2 and 3 added nothing. Ask before adding anything else.
+Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Phase 2 and 3 added nothing. Ask before adding anything else. The PDF export added pdf-lib and @pdf-lib/fontkit (lazy-loaded).
 
 ## Open questions
 
