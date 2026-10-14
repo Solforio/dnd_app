@@ -72,12 +72,15 @@ export const SHARED_FIELD_LABELS: Readonly<Record<SharedField, string>> = {
 /** Name, class and level are always shared: a card needs them. */
 export interface Sharing {
   hp: HpVisibility;
+  /** Show my portrait (never the full-body picture) to the party. */
+  portrait: boolean;
   fields: Record<SharedField, boolean>;
 }
 
 export function defaultSharing(): Sharing {
   return {
     hp: 'status',
+    portrait: true,
     fields: Object.fromEntries(SHARED_FIELDS.map((f) => [f, f === 'conditions'])) as Record<SharedField, boolean>,
   };
 }
@@ -88,6 +91,7 @@ export function sanitizeSharing(raw: unknown): Sharing {
   const d = defaultSharing();
   return {
     hp: asOneOf(s.hp, HP_VISIBILITIES, d.hp),
+    portrait: asBool(s.portrait, d.portrait),
     fields: Object.fromEntries(SHARED_FIELDS.map((f) => [f, asBool(fields[f], d.fields[f])])) as Record<SharedField, boolean>,
   };
 }
@@ -123,9 +127,12 @@ export interface MemberSummary {
   languages?: string[];
   skillProficiencies?: SkillId[];
   darkvision?: number;
+  /** `updatedAt` of the shared portrait document; absent when no portrait is shared. */
+  portraitAt?: number;
 }
 
-export function buildSummary(c: Character, sharing: Sharing): MemberSummary {
+/** `portraitAt`: the version of my portrait on the server, if I share one. */
+export function buildSummary(c: Character, sharing: Sharing, portraitAt?: number): MemberSummary {
   const s = c.sheet;
   const f = sharing.fields;
   const out: MemberSummary = {
@@ -143,6 +150,7 @@ export function buildSummary(c: Character, sharing: Sharing): MemberSummary {
   if (f.languages) out.languages = [...s.languages];
   if (f.skillProficiencies) out.skillProficiencies = SKILLS.filter((k) => s.skills[k].prof >= 1);
   if (f.darkvision) out.darkvision = s.darkvisionM;
+  if (sharing.portrait && portraitAt) out.portraitAt = portraitAt;
   return out;
 }
 
@@ -191,6 +199,7 @@ export function sanitizeSummary(raw: unknown): MemberSummary {
     out.skillProficiencies = SKILLS.filter((k) => set.has(k));
   }
   if (s.darkvision !== undefined) out.darkvision = Math.max(0, Math.min(300, Number(s.darkvision) || 0));
+  if (s.portraitAt !== undefined) out.portraitAt = asInt(s.portraitAt, 0, Number.MAX_SAFE_INTEGER, 0);
   return out;
 }
 

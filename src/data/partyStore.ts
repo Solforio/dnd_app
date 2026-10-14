@@ -19,6 +19,7 @@ import {
 } from '../domain/party';
 import { useCharacterStore } from './characterStore';
 import { getFirebase } from './firebase';
+import { ensurePortraits, usePortraitStore } from './portraitStore';
 import * as repo from './partyRepo';
 import { useSession } from './session';
 
@@ -339,7 +340,7 @@ export const setMyCharacter = (pid: string, characterId: string) =>
     const m = usePartyStore.getState().memberships?.find((x) => x.partyId === pid);
     const character = findCharacter(characterId);
     if (!c || !m || !character) throw new PartyError(OFFLINE);
-    const summary = buildSummary(character, m.sharing);
+    const summary = buildSummary(character, m.sharing, await syncSharedPortrait(c, pid, characterId, m.sharing));
     await repo.updateMyCard(c.db, c.user.uid, pid, { characterId, summary });
     lastSent.set(pid, summary);
     setMemberships((list) => list.map((x) => (x.partyId === pid ? { ...x, characterId } : x)));
@@ -352,33 +353,79 @@ export const setMySharing = (pid: string, sharing: Sharing) =>
     const character = m && findCharacter(m.characterId);
     if (!c || !m) throw new PartyError(OFFLINE);
     const patch: Partial<repo.CardInput> = { sharing };
-    if (character) patch.summary = buildSummary(character, sharing);
+    if (character) patch.summary = buildSummary(character, sharing, await syncSharedPortrait(c, pid, character.id, sharing));
     setMemberships((list) => list.map((x) => (x.partyId === pid ? { ...x, sharing } : x)));
     await repo.updateMyCard(c.db, c.user.uid, pid, patch);
     if (patch.summary) lastSent.set(pid, patch.summary);
   });
 
+/**
+ * Makes the shared portrait on the server match what I want to share, and returns its version for
+ * the summary (undefined when none is shared). The portrait document goes first, so a member who
+ * sees the new version in the summary always finds the picture.
+ */
+async function syncSharedPortrait(
+  c: NonNullable<ReturnType<typeof ctx>>,
+  pid: string,
+  characterId: string,
+  sharing: Sharing,
+): Promise<number | undefined> {
+  await ensurePortraits(characterId);
+  const mine = usePortraitStore.getState().byId[characterId];
+  const onServer = lastSent.get(pid)?.portraitAt;
+  if (sharing.portrait && mine?.portrait) {
+    if (onServer !== mine.updatedAt) await repo.saveSharedPortrait(c.db, pid, c.user.uid, mine.portrait, mine.updatedAt);
+    return mine.updatedAt;
+  }
+  if (onServer !== undefined) await repo.deleteSharedPortrait(c.db, pid, c.user.uid);
+  return undefined;
+}
+
 /** Last summary known to be on the server, per party. */
 const lastSent = new Map<string, MemberSummary>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-function publish(pid: string) {
+async function publish(pid: string) {
   timers.delete(pid);
   const c = ctx();
-  const m = usePartyStore.getState().memberships?.find((x) => x.partyId === pid);
-  const character = m && findCharacter(m.characterId);
-  if (!c || !m || !character) return;
-  const summary = buildSummary(character, m.sharing);
-  if (sameSummary(lastSent.get(pid), summary)) return;
-  lastSent.set(pid, summary);
-  repo.updateMyCard(c.db, c.user.uid, pid, { summary }).catch(() => lastSent.delete(pid));
+  const m0 = usePartyStore.getState().memberships?.find((x) => x.partyId === pid);
+  const character0 = m0 && findCharacter(m0.characterId);
+  if (!c || !m0 || !character0) return;
+  try {
+    const portraitAt = await syncSharedPortrait(c, pid, character0.id, m0.sharing);
+    // Read again: the character may have changed while the portrait was loading or uploading.
+    const m = usePartyStore.getState().memberships?.find((x) => x.partyId === pid);
+    const character = m && findCharacter(m.characterId);
+    if (!m || !character || character.id !== character0.id) return;
+    const summary = buildSummary(character, m.sharing, portraitAt);
+    if (sameSummary(lastSent.get(pid), summary)) return;
+    const before = lastSent.get(pid);
+    lastSent.set(pid, summary);
+    await repo.updateMyCard(c.db, c.user.uid, pid, { summary }).catch(() => {
+      if (before) lastSent.set(pid, before);
+      else lastSent.delete(pid);
+    });
+  } catch {
+    // Offline: the next change or visit publishes again.
+  }
 }
 
 /** When the group screen shows our card, publish if it is behind the character (e.g. edited elsewhere). */
 function catchUpSummary(pid: string, onServer: MemberSummary) {
   if (!lastSent.has(pid)) lastSent.set(pid, onServer);
-  if (!timers.has(pid)) publish(pid);
+  if (!timers.has(pid)) void publish(pid);
 }
+
+/** A new or removed portrait reaches the party like any other change of the card. */
+usePortraitStore.subscribe((s, prev) => {
+  if (s.byId === prev.byId) return;
+  for (const m of usePartyStore.getState().memberships ?? []) {
+    if (s.byId[m.characterId] === prev.byId[m.characterId] || prev.byId[m.characterId] === undefined) continue;
+    const t = timers.get(m.partyId);
+    if (t) clearTimeout(t);
+    timers.set(m.partyId, setTimeout(() => void publish(m.partyId), 1000));
+  }
+});
 
 useCharacterStore.subscribe((s, prev) => {
   if (s.revision === prev.revision) return;
@@ -386,7 +433,7 @@ useCharacterStore.subscribe((s, prev) => {
     if (m.characterId !== s.character.id) continue;
     const t = timers.get(m.partyId);
     if (t) clearTimeout(t);
-    timers.set(m.partyId, setTimeout(() => publish(m.partyId), SUMMARY_DEBOUNCE_MS));
+    timers.set(m.partyId, setTimeout(() => void publish(m.partyId), SUMMARY_DEBOUNCE_MS));
   }
 });
 
@@ -394,7 +441,7 @@ useCharacterStore.subscribe((s, prev) => {
 export function flushSummaries() {
   for (const pid of [...timers.keys()]) {
     clearTimeout(timers.get(pid));
-    publish(pid);
+    void publish(pid);
   }
 }
 

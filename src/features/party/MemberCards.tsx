@@ -3,6 +3,7 @@ import { removeMember, transferOwnership } from '../../data/partyStore';
 import { formatNumber } from '../../domain/format/number';
 import type { Member, MemberSummary } from '../../domain/party';
 import { CONDITION_LABELS } from '../../domain/sheet/rules';
+import { MemberAvatar } from './MemberAvatar';
 
 function HpLine({ s }: { s: MemberSummary }) {
   if (s.hpMax !== undefined && s.hpCur !== undefined) {
@@ -26,7 +27,7 @@ function HpLine({ s }: { s: MemberSummary }) {
   return null;
 }
 
-function Card({ m, me, isDm }: { m: Member; me: boolean; isDm: boolean }) {
+function Card({ pid, m, me, isDm }: { pid: string; m: Member; me: boolean; isDm: boolean }) {
   const s = m.summary;
   const [confirm, setConfirm] = useState<'remove' | 'transfer' | null>(null);
   const [message, setMessage] = useState('');
@@ -40,15 +41,20 @@ function Card({ m, me, isDm }: { m: Member; me: boolean; isDm: boolean }) {
 
   return (
     <li className={`member-card${me ? ' me' : ''}`}>
-      <div className="attack-name">
-        <span className="character-name">{s.characterName}</span>
-        {m.role === 'dm' && <span className="result-tag crit">DM</span>}
-        {s.inspiration && <span className="result-tag crit">Ispirazione</span>}
+      <div className="member-head">
+        <MemberAvatar pid={pid} uid={m.uid} at={s.portraitAt} name={s.characterName} size={48} />
+        <div className="stack-tight">
+          <div className="attack-name">
+            <span className="character-name">{s.characterName}</span>
+            {m.role === 'dm' && <span className="result-tag crit">DM</span>}
+            {s.inspiration && <span className="result-tag crit">Ispirazione</span>}
+          </div>
+          <span className="small muted">
+            {s.class} · {m.username}
+            {me && ' (tu)'}
+          </span>
+        </div>
       </div>
-      <span className="small muted">
-        {s.class} · {m.username}
-        {me && ' (tu)'}
-      </span>
       <HpLine s={s} />
       {stats.length > 0 && <span className="small">{stats.join(' · ')}</span>}
       {down && s.deathSaves && (
@@ -113,13 +119,13 @@ function Card({ m, me, isDm }: { m: Member; me: boolean; isDm: boolean }) {
   );
 }
 
-export function MemberCards({ members, myUid, isDm }: { members: Member[]; myUid: string; isDm: boolean }) {
+export function MemberCards({ pid, members, myUid, isDm }: { pid: string; members: Member[]; myUid: string; isDm: boolean }) {
   return (
     <section className="card stack span-all" aria-labelledby="members-title">
       <h2 id="members-title">Membri</h2>
       <ul className="member-grid">
         {members.map((m) => (
-          <Card key={m.uid} m={m} me={m.uid === myUid} isDm={isDm} />
+          <Card key={m.uid} pid={pid} m={m} me={m.uid === myUid} isDm={isDm} />
         ))}
       </ul>
     </section>

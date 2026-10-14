@@ -369,3 +369,43 @@ describe('maps', () => {
     await assertSucceeds(deleteDoc(doc(as('alice'), 'parties/p1/maps/m1/pins/x1')));
   });
 });
+
+describe('shared portraits', () => {
+  const tiny = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+  const shared = { schemaVersion: 1, portrait: tiny, updatedAt: T };
+  const path = (uid: string) => `parties/p1/members/${uid}/portrait/main`;
+
+  it('lets a member publish their own portrait and the whole party read it', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), shared));
+    await assertSucceeds(getDoc(doc(as('alice'), path('bob'))));
+    await assertSucceeds(getDoc(doc(as('bob'), path('bob'))));
+  });
+
+  it('keeps it from strangers and from anyone writing on behalf of another member', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), shared));
+    await assertFails(getDoc(doc(as('eve'), path('bob'))));
+    await assertFails(setDoc(doc(as('alice'), path('bob')), shared));
+    await assertFails(setDoc(doc(as('eve'), path('eve')), shared));
+  });
+
+  it('accepts only a small image data URL, under the id main', async () => {
+    await seedParty();
+    const db = as('bob');
+    await assertFails(setDoc(doc(db, path('bob')), { ...shared, portrait: 'https://example.com/a.jpg' }));
+    await assertFails(setDoc(doc(db, path('bob')), { ...shared, portrait: 'data:image/jpeg;base64,' + 'A'.repeat(60000) }));
+    await assertFails(setDoc(doc(db, 'parties/p1/members/bob/portrait/other'), shared));
+    await assertFails(setDoc(doc(db, path('bob')), { ...shared, extra: 1 }));
+  });
+
+  it('can be taken down by its owner or by the DM, not by another player', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), shared));
+    await assertFails(deleteDoc(doc(as('carol'), path('bob'))));
+    await assertSucceeds(deleteDoc(doc(as('alice'), path('bob'))));
+    await assertSucceeds(setDoc(doc(as('bob'), path('bob')), shared));
+    await assertSucceeds(deleteDoc(doc(as('bob'), path('bob'))));
+  });
+});

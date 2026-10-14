@@ -11,9 +11,9 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | 2: character sheet and multiple characters | **done** (2026-10-13) |
 | 3: parties | **done** (2026-10-13); rules (35 tests) deployed to `dungeons-9446d`; two-browser emulator check passes |
 | 4: inventory and weight | **done** (2026-10-13) |
-| maps (built before 5 to 7, user request) | **done** (2026-10-14); rules (38 tests) deployed; two-user emulator check passes |
+| maps (built before 5 to 7, user request) | **done** (2026-10-14); rules (45 tests) deployed; two-user emulator check passes |
 | 5+: notes, codex, PWA | not started |
-| ideas I1 to I7 (see "Ideas") | registered 2026-10-14; I3 and I4 done and deployed, rest not started |
+| ideas I1 to I7 (see "Ideas") | registered 2026-10-14; I2, I3 and I4 done, rest not started |
 
 ## Phase 0: what exists
 
@@ -153,7 +153,12 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
   3. Offline: IndexedDB already works offline once imported. The app shell itself needs the PWA phase (service worker). Add `navigator.storage.persist()` so the browser does not evict the images.
 - **Difficulty**: M. **Depends on**: PWA (offline shell), existing map store. **Risks**: iOS Safari evicts site data after about 7 days without use unless the app is installed to the home screen; every device (and every player) must import once; ~100 MB of images may be slow on phones. Fan-made maps with a compatible licence could replace the WotC set later without any code change.
 
-### [ ] I2. Character photos: portrait, plus full-body on the sheet
+### [x] I2. Character photos: portrait, plus full-body on the sheet (done 2026-10-14)
+
+- **Done**: `src/domain/portrait.ts` (limits, `sanitizePortraits`, geometry; tests), `portraitRepo` (IndexedDB `dnd-companion-portraits` when logged out; `users/{uid}/portraits/{characterId}` in the account), `portraitStore` (loaded per character when shown), `portraitImage` (portrait = centred 256 px square, full-body fits 768 px, JPEG, quality then size drop until under the limit: 60.000 / 220.000 characters). UI: portrait avatar in the header switcher and on the sheet header (upload in edit mode), «Aspetto» card with the full-body picture (never shared). Removing a character removes its pictures.
+- **Party**: `parties/{pid}/members/{uid}/portrait/main` holds the shared portrait; the member summary carries `portraitAt` (its version), so other members fetch it once per version (1 read) and only when the summary says there is one. Sharing gained `portrait` (**default on**; checkbox «Mostra il mio ritratto agli altri» in «La mia scheda nel gruppo»); turning it off or removing the picture deletes the shared document. The portrait document is written before the summary that mentions it. Owner and DM can delete it; leaving, removing a member and deleting a party clean it up (best effort).
+- **Rules** (deployed to `dungeons-9446d` 2026-10-14): personal portraits owner-only with size and format checks; shared portraits member-readable, owner-written. 45 rules tests pass. Checked in the browser with the emulators (upload, card shows it, unsharing removes it); a second member was not tried live.
+- Original note follows.
 
 - **Plan**: portrait shown on the sheet, in the header switcher and in the party member cards (Gruppi); the full-body picture only on the sheet.
 - **No Cloud Storage (Blaze)**, so pictures are downscaled in the browser (portrait about 256 px WebP/JPEG, ~15 to 30 KB; full-body about 768 px, ~80 to 150 KB) and stored as base64 in a **separate small document**, not inside the character (the character is rewritten on every debounced save and has the 1 MiB limit):
@@ -216,7 +221,7 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 
 1. **I3** 3D dice: already requested as the next step, no dependencies, no sync.
 2. **I4** (done) Level-up HP + hit dice: small, closes the open question, and its class/level data is needed by I6.
-3. **I2** Photos: introduces "small image in Firestore" and the first rules change for shared data, simpler than the bestiary.
+3. **I2** (done) Photos: introduces "small image in Firestore" and the first rules change for shared data, simpler than the bestiary.
 4. **I6a** Spell slots + rests (no spell data); I6b/c later.
 5. **I5** Bestiary (monster list first, party bestiary second): first feature with shared data written by every member; reuses the pins pattern.
 6. **I7** Master: needs the commands channel and a privacy decision, builds on all of the above; last of the sync features.

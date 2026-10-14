@@ -8,6 +8,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   startAfter,
   where,
   writeBatch,
@@ -16,6 +17,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { cryptoRandomBelow } from '../domain/dice/rng';
+import { PORTRAIT_SCHEMA_VERSION, sanitizePortraits } from '../domain/portrait';
 import {
   generateJoinCode,
   LOG_PAGE,
@@ -25,6 +27,7 @@ import {
   sanitizeMembership,
   sanitizeParty,
   sanitizeQuest,
+  sanitizeSummary,
   type LogEntry,
   type Member,
   type MemberSummary,
@@ -154,8 +157,27 @@ export async function countMembers(db: Firestore, pid: string): Promise<number> 
   return (await getDocs(collection(db, 'parties', pid, 'members'))).size;
 }
 
-/** Leaving: the member card and the private membership. */
+// --- Shared portrait: parties/{pid}/members/{uid}/portrait/main ---
+
+const portraitRef = (db: Firestore, pid: string, uid: string) => doc(db, 'parties', pid, 'members', uid, 'portrait', 'main');
+
+/** One read per member and portrait version. */
+export async function fetchSharedPortrait(db: Firestore, pid: string, uid: string): Promise<string | null> {
+  const snap = await getDoc(portraitRef(db, pid, uid));
+  return snap.exists() ? sanitizePortraits(snap.data()).portrait : null;
+}
+
+export function saveSharedPortrait(db: Firestore, pid: string, uid: string, portrait: string, updatedAt: number): Promise<void> {
+  return setDoc(portraitRef(db, pid, uid), { schemaVersion: PORTRAIT_SCHEMA_VERSION, portrait, updatedAt });
+}
+
+export function deleteSharedPortrait(db: Firestore, pid: string, uid: string): Promise<void> {
+  return deleteDoc(portraitRef(db, pid, uid));
+}
+
+/** Leaving: the shared portrait (best effort), then the member card and the private membership. */
 export async function leaveParty(db: Firestore, uid: string, pid: string): Promise<void> {
+  await deleteSharedPortrait(db, pid, uid).catch(() => {});
   const b = writeBatch(db);
   b.delete(memberRef(db, pid, uid));
   b.delete(membershipRef(db, uid, pid));
@@ -185,6 +207,9 @@ export async function deleteParty(db: Firestore, uid: string, party: Party): Pro
     refs.slice(i, i + 450).forEach((r) => b.delete(r));
     await b.commit();
   }
+  // Shared portraits live under the member cards and are not removed with them.
+  const withPortrait = members.docs.filter((d) => sanitizeSummary(d.data().summary).portraitAt);
+  for (const d of withPortrait) await deleteSharedPortrait(db, pid, d.id).catch(() => {});
   const b = writeBatch(db);
   members.docs.filter((d) => d.id !== uid).forEach((d) => b.delete(d.ref));
   b.delete(codeRef(db, party.joinCode));
@@ -229,7 +254,8 @@ export async function transferOwnership(db: Firestore, pid: string, fromUid: str
   await b.commit();
 }
 
-export function removeMember(db: Firestore, pid: string, uid: string): Promise<void> {
+export async function removeMember(db: Firestore, pid: string, uid: string): Promise<void> {
+  await deleteSharedPortrait(db, pid, uid).catch(() => {});
   return deleteDoc(memberRef(db, pid, uid));
 }
 

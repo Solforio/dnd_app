@@ -50,6 +50,15 @@ export function MySharing({ membership, isDm, onLeft }: { membership: Membership
         </div>
       </fieldset>
 
+      <label className="inline">
+        <input
+          type="checkbox"
+          checked={sharing.portrait}
+          onChange={async (e) => report(await setMySharing(pid, { ...sharing, portrait: e.target.checked }))}
+        />
+        Mostra il mio ritratto agli altri (non la figura intera)
+      </label>
+
       <fieldset className="plain">
         <legend className="label">Cos’altro condividi (nome, classe e livello sono sempre visibili)</legend>
         <div className="share-grid">

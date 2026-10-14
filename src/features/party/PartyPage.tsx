@@ -120,7 +120,7 @@ export function PartyPage() {
         <Link to="/gruppo">← I miei gruppi</Link>
       </nav>
       <PartyHeader party={party} isDm={isDm} />
-      <MemberCards members={members} myUid={user.uid} isDm={isDm} />
+      <MemberCards pid={party.id} members={members} myUid={user.uid} isDm={isDm} />
       <div className="column">
         <QuestBoard isDm={isDm} />
         <SessionLog myUid={user.uid} isDm={isDm} />

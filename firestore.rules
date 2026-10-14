@@ -250,6 +250,22 @@ service cloud.firestore {
           || (isPartyOwner(pid) && uid != request.auth.uid);
       }
 
+      // The shared portrait of a member: one small image, readable by the party.
+      match /members/{uid}/portrait/{doc} {
+        function validSharedPortrait(data) {
+          return data.keys().hasOnly(['schemaVersion', 'portrait', 'updatedAt'])
+            && data.schemaVersion is int
+            && data.portrait is string && data.portrait.size() <= 60000
+            && data.portrait.matches('data:image/(jpeg|png|webp);base64,.*')
+            && data.updatedAt is int;
+        }
+
+        allow read: if isMember(pid);
+        allow create, update: if isOwner(uid) && isMember(pid) && doc == 'main' && validSharedPortrait(request.resource.data);
+        // The owner takes it down; the DM can also remove it (and clears it when removing a member).
+        allow delete: if isOwner(uid) || isPartyOwner(pid);
+      }
+
       match /quests/{questId} {
         function validQuest(data) {
           return data.keys().hasOnly(['schemaVersion', 'title', 'description', 'status', 'updatedAt'])

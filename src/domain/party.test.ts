@@ -204,3 +204,20 @@ describe('countdown', () => {
     expect(countdown(now - min, now)).toBe('già iniziata o passata');
   });
 });
+
+describe('shared portrait', () => {
+  it('is shared by default, and the summary carries its version only when shared and present', () => {
+    expect(defaultSharing().portrait).toBe(true);
+    expect(buildSummary(thorin(), defaultSharing(), 1234).portraitAt).toBe(1234);
+    expect(buildSummary(thorin(), defaultSharing()).portraitAt).toBeUndefined();
+    expect(buildSummary(thorin(), { ...defaultSharing(), portrait: false }, 1234).portraitAt).toBeUndefined();
+  });
+
+  it('is read back safely, and old sharing settings default to sharing', () => {
+    expect(sanitizeSummary({ characterName: 'A', portraitAt: 99 }).portraitAt).toBe(99);
+    expect(sanitizeSummary({ characterName: 'A', portraitAt: 'x' }).portraitAt).toBe(0);
+    expect(sanitizeSummary({ characterName: 'A' }).portraitAt).toBeUndefined();
+    expect(sanitizeSharing({ hp: 'exact', fields: {} }).portrait).toBe(true);
+    expect(sanitizeSharing({ portrait: false }).portrait).toBe(false);
+  });
+});
