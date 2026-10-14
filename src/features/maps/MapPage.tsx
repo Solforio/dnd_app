@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
+import { getFirebase } from '../../data/firebase';
 import { fingerprintOf, prepareImage, putImage } from '../../data/imageStore';
+import { downloadAccountImage } from '../../data/imageSync';
 import {
   ensurePersonalMaps,
   removePin,
@@ -16,6 +18,7 @@ import { newId } from '../../domain/character';
 import { breadcrumb, PIN_KIND_LABELS, type MapPin } from '../../domain/maps';
 import { mapPath } from './mapPaths';
 import { MapViewer } from './MapViewer';
+import { ImageSyncControl } from './ImageSyncControl';
 import { PinPanel } from './PinPanel';
 import { useMapImage } from './useMapImage';
 
@@ -24,6 +27,33 @@ function MissingImage({ fingerprint, onLoaded }: { fingerprint: string; onLoaded
   const input = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<File | null>(null);
   const [message, setMessage] = useState('');
+  const phase = useSession((s) => s.phase);
+  const user = useSession((s) => s.user);
+  // Logged in: the user's own copy may be in the account, so look there before asking for the file.
+  const [searched, setSearched] = useState(false);
+  const canSearch = phase === 'cloud' && user !== null;
+  const searching = canSearch && !searched;
+
+  useEffect(() => {
+    const fb = canSearch ? getFirebase() : null;
+    if (!fb || !user) return;
+    let cancelled = false;
+    downloadAccountImage(fb.db, user.uid, fingerprint)
+      .then((found) => {
+        if (cancelled) return;
+        if (found) onLoaded();
+        else setSearched(true);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setMessage(e instanceof Error ? e.message : '');
+        setSearched(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fingerprint, canSearch, user]);
 
   const store = async (file: File, asFingerprint?: string) => {
     try {
@@ -44,6 +74,14 @@ function MissingImage({ fingerprint, onLoaded }: { fingerprint: string; onLoaded
       setPending(file);
     }
   };
+
+  if (searching) {
+    return (
+      <div className="card stack map-missing" role="status">
+        <p>Cerco l’immagine nel tuo account…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="card stack map-missing">
@@ -273,6 +311,7 @@ export function MapPage({ scope: kind }: { scope: 'personal' | 'party' }) {
             </ul>
           )}
         </section>
+        {image.status === 'ready' && <ImageSyncControl fingerprint={map.fingerprint} />}
       </aside>
     </main>
   );

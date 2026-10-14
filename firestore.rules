@@ -94,6 +94,33 @@ service cloud.firestore {
         allow create, update: if isOwner(uid) && validPortraits(request.resource.data);
       }
 
+      // The user's own copy of a map image, cut into chunks (no Cloud Storage on Spark). Owner only, never shared.
+      match /mapImages/{fingerprint} {
+        function validImageMeta(data) {
+          return data.keys().hasOnly(['schemaVersion', 'width', 'height', 'fileName', 'type', 'chunks', 'updatedAt'])
+            && data.schemaVersion is int
+            && fingerprint.size() == 32
+            && data.width is int && data.width > 0 && data.width <= 20000
+            && data.height is int && data.height > 0 && data.height <= 20000
+            && shortString(data.fileName, 120)
+            && data.type in ['image/jpeg', 'image/png', 'image/webp']
+            && data.chunks is int && data.chunks >= 1 && data.chunks <= 8
+            && data.updatedAt is int;
+        }
+
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validImageMeta(request.resource.data);
+
+        match /chunks/{n} {
+          allow read, delete: if isOwner(uid);
+          allow create, update: if isOwner(uid)
+            && request.resource.data.keys().hasOnly(['data'])
+            && request.resource.data.data is string
+            && request.resource.data.data.size() <= 750000
+            && n.matches('[0-7]');
+        }
+      }
+
       // Private list of "my parties", so the app needs no collection-group query.
       match /memberships/{pid} {
         function validMembership(data) {

@@ -146,3 +146,37 @@ describe('users/{uid}/portraits/{id}', () => {
     await assertFails(setDoc(doc(as('alice'), 'users/alice/portraits/c1'), { ...pictures, extra: 1 }));
   });
 });
+
+describe('users/{uid}/mapImages', () => {
+  const fp = 'a'.repeat(32);
+  const meta = { schemaVersion: 1, width: 4317, height: 3030, fileName: 'faerun.jpg', type: 'image/jpeg', chunks: 2, updatedAt: 1_700_000_000_000 };
+
+  it('lets the owner store, read and delete an image with its chunks, and nobody else', async () => {
+    const db = as('alice');
+    await assertSucceeds(setDoc(doc(db, `users/alice/mapImages/${fp}/chunks/0`), { data: 'QUJD' }));
+    await assertSucceeds(setDoc(doc(db, `users/alice/mapImages/${fp}`), meta));
+    await assertSucceeds(getDoc(doc(db, `users/alice/mapImages/${fp}/chunks/0`)));
+    await assertFails(getDoc(doc(as('bob'), `users/alice/mapImages/${fp}`)));
+    await assertFails(getDoc(doc(as('bob'), `users/alice/mapImages/${fp}/chunks/0`)));
+    await assertFails(setDoc(doc(as('bob'), `users/alice/mapImages/${fp}`), meta));
+    await assertSucceeds(deleteDoc(doc(db, `users/alice/mapImages/${fp}/chunks/0`)));
+    await assertSucceeds(deleteDoc(doc(db, `users/alice/mapImages/${fp}`)));
+  });
+
+  it('checks the description: fingerprint length, type, chunk count, unknown fields', async () => {
+    const db = as('alice');
+    await assertFails(setDoc(doc(db, 'users/alice/mapImages/short'), meta));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}`), { ...meta, type: 'image/svg+xml' }));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}`), { ...meta, chunks: 9 }));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}`), { ...meta, chunks: 0 }));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}`), { ...meta, extra: 1 }));
+  });
+
+  it('accepts chunks 0 to 7 of at most 750000 characters, with only a data field', async () => {
+    const db = as('alice');
+    await assertSucceeds(setDoc(doc(db, `users/alice/mapImages/${fp}/chunks/7`), { data: 'A'.repeat(700000) }));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}/chunks/8`), { data: 'QUJD' }));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}/chunks/1`), { data: 'A'.repeat(750001) }));
+    await assertFails(setDoc(doc(db, `users/alice/mapImages/${fp}/chunks/1`), { data: 'QUJD', extra: 1 }));
+  });
+});
