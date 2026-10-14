@@ -2,7 +2,8 @@ import { useId, useMemo, useState } from 'react';
 import { useSpellCatalogue } from '../../data/spellCatalogue';
 import { addSpell, listOf, type Capacity, type SpellClass } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
-import { levelLabel } from './labels';
+import { excerpt, levelLabel } from './labels';
+import { ReadButton } from './SpellRow';
 
 const SHOWN = 30;
 
@@ -51,13 +52,17 @@ export function SpellPicker({ sc, cap, onMessage }: { sc: SpellClass; cap: Capac
       </div>
       <ul className="plain stack">
         {matches.slice(0, SHOWN).map((sp) => (
-          <li key={sp.id} className="row spell-pick">
-            <span>
-              <strong>{sp.name}</strong>{' '}
-              <span className="small muted">
-                {levelLabel(sp.level)} · {sp.school}
-              </span>
-            </span>
+          <li key={sp.id} className="spell-pick">
+            <div className="spell-summary">
+              <div className="spell-title">
+                <strong>{sp.name}</strong>
+                <span className="small muted">
+                  {levelLabel(sp.level)} · {sp.school}
+                </span>
+              </div>
+              <p className="small spell-excerpt">{excerpt(sp.text)}</p>
+            </div>
+            <ReadButton spell={sp} />
             <button
               type="button"
               disabled={have.has(sp.id)}

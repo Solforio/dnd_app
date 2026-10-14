@@ -45,7 +45,7 @@ export function ClassSpellsCard({ c, editing }: { c: ClassEntry; editing: boolea
   };
 
   const row = (spell: Spell, kind: 'cantrip' | 'known' | 'book' | 'prepared') => (
-    <SpellRow key={spell.id} spell={spell} canCast={canCastNow.has(spell.id)} onCast={setMessage}>
+    <SpellRow key={spell.id} spell={spell} canCast={canCastNow.has(spell.id)}>
       {kind === 'book' && (
         <button type="button" aria-pressed={list.prepared.includes(spell.id)} onClick={() => prepare(spell.id)}>
           {list.prepared.includes(spell.id) ? 'Preparato ✓' : 'Prepara'}

@@ -238,6 +238,28 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 - **Durations**: SRD spell durations are text («1 minute», «Concentration, up to 1 hour»); a small parser turns «1 round» and minutes into rounds (1 minute = 10 rounds), longer durations stay manual. Tested like the dice parser.
 - **Difficulty**: M to L. **Depends on**: I6b (spell data with durations; the screen can start with manual effects and attacks before that), existing HP, conditions, attacks, slots. **Risks**: scope creep (initiative tracking belongs with the Master section, I7: the DM's shared initiative order could later feed «è il tuo turno»); end-of-turn versus start-of-turn expiry (start with «end of my turn»); duplicating UI instead of reusing the existing cards (reuse them).
 
+### UI and usability plan (proposal, 2026-10-14: nothing applied yet, waiting for the user's choice)
+
+**Why**: pages are long and information gets lost. Measured on the live site (desktop 1707 px wide; «stacked» = the sum of the cards, a good estimate of a phone's scroll height): **Tiri** 1590 px (stacked 2131, 6 cards; HP 606, Vassoio 434), **Scheda** 1955 px (stacked 2577, 10 cards; Abilità alone 830, Caratteristiche 473, Dadi vita 276), **Combattimento** 1401 px (stacked 1413), **Zaino** 915 px (the weight settings card alone 305). The tab bar now has 7 entries.
+
+Strategies, from cheapest to biggest:
+1. **Collapsible cards that remember their state** (one small component, state in `localStorage`): Abilità, Dadi vita, Impostazioni del peso, Storico, Formula libera collapsed by default. Gain: Scheda about −1000 px, Zaino −250, Tiri −450. Risk: low.
+2. **Skills compact**: a two-column grid, proficient skills first (or only them, with «mostra tutte le 18»). Abilità goes from 830 px to about 300.
+3. **Tiri page**: Formula libera folded into the tray («formula avanzata»), presets as chips under the die (as in the combat screen), history shows the last 5 with «mostra tutto», the HP panel slimmed (manual edit, level-up and rests in a «Gestione PF» fold). Gain about −600 px, and the die is visible without scrolling.
+4. **Scheda page split into sections** with a segmented control (Riepilogo · Abilità · Capacità e tratti · Aspetto): only one section at a time. Gain: every section about one screen on a phone.
+5. **Always-visible vital strip** under the tabs (name, HP bar with quick damage and healing, AC, round in combat): HP no longer needs a card on three pages.
+6. **Navigation**: on phones a bottom bar with the five used most (Tiri, Scheda, Combattimento, Grimorio, Zaino) and «Altro» (Mappe, Gruppo, Personaggi, Impostazioni); fewer tabs, thumb reach.
+7. **Density setting** («Compatta / Comoda»): less padding and smaller type for people who prefer seeing more. Risk: touch targets must stay at least 44 px in the comfortable mode.
+8. **Long texts** (traits, features, notes): two lines with «Espandi». **Inventory**: denser rows, categories as chips, settings in a fold.
+9. **Wide screens**: three columns above 1300 px (today two), so the page is shorter instead of leaving blank space.
+
+Recommended order: 1 and 2 (an afternoon, no data changes), then 3 and 5, then 4 and 6, then 7 to 9. Strategies 1 to 3 alone cut the longest pages by about a third.
+
+### Changes after user feedback (2026-10-14, evening)
+
+- The die on the Tiri page is a button: a tap rolls what the tray holds, which now **starts as a single d20** («Torna a 1d20» resets it). Tray state lives in `src/data/trayStore.ts`, shared with the die.
+- Spell descriptions: every list (Grimorio, picker for new spells, combat screen, active effects) shows the start of the text under the name and a **«Leggi»** button; the name opens the same window. After a cast a notice offers «Leggi»; the window has the choice «Apri questa finestra ogni volta che lancio» (remembered, `dnd-companion:spell-popup`). Native `<dialog>`: Escape and the backdrop close it.
+
 ### Chosen order (2026-10-14)
 
 1. **I3** 3D dice: already requested as the next step, no dependencies, no sync.

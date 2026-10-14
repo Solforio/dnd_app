@@ -1,3 +1,5 @@
+import { useCharacterStore } from '../../data/characterStore';
+import { trayFormula, useTray } from '../../data/trayStore';
 import type { RollRecord } from '../../domain/character';
 import { formatNumber } from '../../domain/format/number';
 import { MODE_LABEL } from './labels';
@@ -19,6 +21,9 @@ function naturalRoll(roll: RollRecord, sides: number): number | undefined {
 
 /** The memorable element: a large d20 showing the last total. */
 export function D20Result({ roll }: { roll: RollRecord | undefined }) {
+  const tray = useTray();
+  const chosen = trayFormula(tray);
+  const rollChosen = useCharacterStore((s) => s.roll);
   const text = roll ? formatNumber(roll.total) : '–';
   const sides = shownSides(roll);
   const state = roll?.crit ? ' crit' : roll?.fumble ? ' fumble' : '';
@@ -37,7 +42,18 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
         natural={roll ? naturalRoll(roll, sides) : undefined}
         className={state}
         label={roll ? `Risultato ${text}` : 'Nessun tiro ancora'}
+        onRoll={chosen ? () => rollChosen(chosen) : undefined}
+        rollLabel={`Lancia ${chosen}`}
       />
+      <p className="small muted die-hint">
+        {chosen ? (
+          <>
+            Tocca il dado per lanciare <code>{chosen}</code>
+          </>
+        ) : (
+          'Scegli almeno un dado nel vassoio.'
+        )}
+      </p>
 
       {roll ? (
         <>
@@ -51,7 +67,7 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
           <RollBreakdown terms={roll.terms} />
         </>
       ) : (
-        <p className="muted">Scegli i dadi o scrivi una formula, poi premi «Lancia».</p>
+        <p className="muted small">Cambia i dadi nel vassoio o scrivi una formula libera.</p>
       )}
       <DiceMotionControl />
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">

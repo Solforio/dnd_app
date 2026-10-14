@@ -1,15 +1,19 @@
 import { useState, type ReactNode } from 'react';
+import { useSpellDialog } from '../../data/spellDialog';
 import { newId } from '../../domain/character';
 import { castOptions, castWithEffect, type CastChoice, type Spell } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
-import { levelLabel } from './labels';
+import { excerpt, levelLabel } from './labels';
 
-/** Name, tags and the full SRD text of a spell, folded away until opened. */
-export function SpellDetails({ spell }: { spell: Spell }) {
+/** Name (opens the full text), level, tags and the start of the description. */
+export function SpellSummary({ spell }: { spell: Spell }) {
+  const open = useSpellDialog((s) => s.open);
   return (
-    <details className="spell-details">
-      <summary>
-        <span className="spell-name">{spell.name}</span>
+    <div className="spell-summary">
+      <div className="spell-title">
+        <button type="button" className="link spell-name" onClick={() => open(spell)}>
+          {spell.name}
+        </button>
         <span className="small muted">
           {levelLabel(spell.level)} · {spell.school}
         </span>
@@ -23,35 +27,19 @@ export function SpellDetails({ spell }: { spell: Spell }) {
             R
           </span>
         )}
-      </summary>
-      <dl className="spell-facts small">
-        <div>
-          <dt>Tempo di lancio</dt>
-          <dd>{spell.castingTime}</dd>
-        </div>
-        <div>
-          <dt>Gittata</dt>
-          <dd>{spell.range}</dd>
-        </div>
-        <div>
-          <dt>Componenti</dt>
-          <dd>
-            {spell.components}
-            {spell.material ? ` (${spell.material})` : ''}
-          </dd>
-        </div>
-        <div>
-          <dt>Durata</dt>
-          <dd>{spell.duration}</dd>
-        </div>
-      </dl>
-      {spell.text.split('\n\n').map((p, i) => (
-        <p key={i} className="small">
-          {p}
-        </p>
-      ))}
-      {spell.higher && <p className="small">{spell.higher}</p>}
-    </details>
+      </div>
+      <p className="small spell-excerpt">{excerpt(spell.text)}</p>
+    </div>
+  );
+}
+
+/** The «Leggi» button that opens the full description. */
+export function ReadButton({ spell }: { spell: Spell }) {
+  const open = useSpellDialog((s) => s.open);
+  return (
+    <button type="button" className="ghost" aria-label={`Leggi ${spell.name}`} onClick={() => open(spell)}>
+      Leggi
+    </button>
   );
 }
 
@@ -61,19 +49,10 @@ function describe(o: CastChoice): string {
   return 'Come rituale (nessuno slot)';
 }
 
-/** A spell in a list, with its buttons: cast (spends a slot), plus whatever the list adds. */
-export function SpellRow({
-  spell,
-  canCast,
-  onCast,
-  children,
-}: {
-  spell: Spell;
-  canCast: boolean;
-  onCast: (message: string) => void;
-  children?: ReactNode;
-}) {
+/** A spell in a list: summary, «Leggi», «Lancia» (spends a slot, then offers the description), plus what the list adds. */
+export function SpellRow({ spell, canCast, children }: { spell: Spell; canCast: boolean; children?: ReactNode }) {
   const s = useSheet();
+  const announce = useSpellDialog((x) => x.announceCast);
   const [open, setOpen] = useState(false);
   const options = canCast ? castOptions(s, spell) : [];
   const cast = (o: CastChoice) => {
@@ -88,13 +67,14 @@ export function SpellRow({
           : `con uno slot di ${o.level}° livello${o.kind === 'pact' ? ' del Patto' : ''}`;
     const effect = r.tracked ? ' Aggiunto agli effetti attivi.' : '';
     const dropped = r.dropped ? ` Concentrazione su ${r.dropped} interrotta.` : '';
-    onCast(`${spell.name} lanciato${how ? ` ${how}` : ''}.${effect}${dropped}`);
+    announce(spell, `${spell.name} lanciato${how ? ` ${how}` : ''}.${effect}${dropped}`);
   };
 
   return (
     <li className="spell-row">
-      <SpellDetails spell={spell} />
+      <SpellSummary spell={spell} />
       <div className="row spell-actions">
+        <ReadButton spell={spell} />
         {canCast && spell.level === 0 && (
           <button type="button" onClick={() => cast({ kind: 'free' })}>
             Lancia

@@ -5,7 +5,7 @@ import { useSpellCatalogue } from '../../data/spellCatalogue';
 import { newId } from '../../domain/character';
 import { formatNumber } from '../../domain/format/number';
 import { addEffect, COMBAT_LIMITS, removeEffect } from '../../domain/sheet/combat';
-import { SpellDetails } from '../grimoire/SpellRow';
+import { ReadButton } from '../grimoire/SpellRow';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
 
 /** Spells and other effects running on the character, with the rounds they have left. Spell effects can be read in full. */
@@ -60,11 +60,13 @@ export function EffectsCard() {
                       {e.remaining === null ? (e.note || 'a mano') : `${formatNumber(e.remaining)} round rimasti`}
                     </span>
                   </span>
-                  <button type="button" className="ghost" aria-label={`Termina ${e.name}`} onClick={() => editSheet((x) => removeEffect(x, e.id))}>
-                    Termina
-                  </button>
+                  <span className="row">
+                    {spell && <ReadButton spell={spell} />}
+                    <button type="button" className="ghost" aria-label={`Termina ${e.name}`} onClick={() => editSheet((x) => removeEffect(x, e.id))}>
+                      Termina
+                    </button>
+                  </span>
                 </div>
-                {spell && <SpellDetails spell={spell} />}
               </li>
             );
           })}

@@ -1,27 +1,15 @@
 import { useId, useState } from 'react';
 import { useCharacterStore } from '../../data/characterStore';
 import { diceMotionOn, useDiceMotion } from '../../data/motionPref';
+import { isDefaultTray, MAX_PER_DIE, TRAY_DICE, trayFormula, useTray } from '../../data/trayStore';
 import { DieIcon } from './DieIcon';
 import { SavePresetForm } from './SavePresetForm';
-
-const DICE = [4, 6, 8, 10, 12, 20, 100] as const;
-const MAX_PER_DIE = 20;
-type Counts = Record<(typeof DICE)[number], number>;
-const EMPTY: Counts = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0, 100: 0 };
-
-/** Dice in the order they were first chosen: the first one is the die the 3D animation shows. */
-function buildFormula(counts: Counts, order: readonly number[], modifier: number): string {
-  const parts = order.filter((s) => counts[s as keyof Counts] > 0).map((s) => `${counts[s as keyof Counts]}d${s}`);
-  if (parts.length === 0) return '';
-  const mod = modifier > 0 ? `+${modifier}` : modifier < 0 ? `${modifier}` : '';
-  return parts.join('+') + mod;
-}
 
 export function DiceTray() {
   const roll = useCharacterStore((s) => s.roll);
   const addPreset = useCharacterStore((s) => s.addPreset);
-  const [{ counts, order }, setPick] = useState<{ counts: Counts; order: number[] }>({ counts: EMPTY, order: [] });
-  const [modifier, setModifier] = useState(0);
+  const tray = useTray();
+  const { counts, modifier, add, setModifier, reset } = tray;
   const [saving, setSaving] = useState(false);
   // Counts the taps on each die; a new value restarts its small wobble.
   const [taps, setTaps] = useState<Record<number, number>>({});
@@ -29,25 +17,19 @@ export function DiceTray() {
   const tap = (sides: number) => setTaps((t) => ({ ...t, [sides]: (t[sides] ?? 0) + 1 }));
   const modId = useId();
 
-  const formula = buildFormula(counts, order, modifier);
-  const change = (sides: keyof Counts, delta: number) =>
-    setPick((p) => {
-      const next = Math.min(MAX_PER_DIE, Math.max(0, p.counts[sides] + delta));
-      const rest = p.order.filter((x) => x !== sides);
-      return { counts: { ...p.counts, [sides]: next }, order: next === 0 ? rest : p.order.includes(sides) ? p.order : [...rest, sides] };
-    });
+  const formula = trayFormula(tray);
 
   return (
     <section className="card stack" aria-labelledby="tray-title">
       <h2 id="tray-title">Vassoio dei dadi</h2>
       <div className="tray">
-        {DICE.map((s) => (
+        {TRAY_DICE.map((s) => (
           <div className="tray-die" key={s}>
             <button
               type="button"
               className="add"
               onClick={() => {
-                change(s, 1);
+                add(s, 1);
                 tap(s);
               }}
               disabled={counts[s] >= MAX_PER_DIE}
@@ -65,7 +47,7 @@ export function DiceTray() {
               type="button"
               className="remove"
               onClick={() => {
-                change(s, -1);
+                add(s, -1);
                 tap(s);
               }}
               disabled={counts[s] === 0}
@@ -87,7 +69,7 @@ export function DiceTray() {
             min={-99}
             max={99}
             value={modifier}
-            onChange={(e) => setModifier(Math.max(-99, Math.min(99, Math.trunc(Number(e.target.value) || 0))))}
+            onChange={(e) => setModifier(Number(e.target.value))}
           />
         </div>
         <p className="formula-preview" aria-live="polite">
@@ -114,16 +96,8 @@ export function DiceTray() {
           <button type="button" disabled={!formula} onClick={() => setSaving(true)}>
             Salva come preset
           </button>
-          <button
-            type="button"
-            className="ghost"
-            disabled={!formula && modifier === 0}
-            onClick={() => {
-              setPick({ counts: EMPTY, order: [] });
-              setModifier(0);
-            }}
-          >
-            Svuota
+          <button type="button" className="ghost" disabled={isDefaultTray(tray)} onClick={reset}>
+            Torna a 1d20
           </button>
         </div>
       )}

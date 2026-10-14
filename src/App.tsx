@@ -8,6 +8,7 @@ import { SignInPage } from './features/account/SignInPage';
 import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
 import { CharactersPage } from './features/character/CharactersPage';
+import { SpellDialog, SpellNotice } from './features/grimoire/SpellDialog';
 import { CombatPage } from './features/combat/CombatPage';
 import { GrimoirePage } from './features/grimoire/GrimoirePage';
 import { D20Result } from './features/dice/D20Result';
@@ -106,6 +107,8 @@ export function App() {
           </p>
         </main>
       )}
+      <SpellDialog />
+      <SpellNotice />
       <footer className="app-footer small muted">
         {phase === 'cloud'
           ? 'I dati sono salvati sul tuo account e su questo dispositivo.'

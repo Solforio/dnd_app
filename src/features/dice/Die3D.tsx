@@ -38,6 +38,10 @@ interface Props {
   natural?: number;
   className: string;
   label: string;
+  /** When given, the die is a button: a tap rolls again. */
+  onRoll?: () => void;
+  /** What the button announces, e.g. «Lancia 1d20». */
+  rollLabel?: string;
 }
 
 /**
@@ -45,7 +49,7 @@ interface Props {
  * every frame. It tumbles, bounces and settles with the result towards the
  * viewer. With reduced motion it simply appears in its final position.
  */
-export function Die3D({ rollId, text, sides = 20, natural, className, label }: Props) {
+export function Die3D({ rollId, text, sides = 20, natural, className, label, onRoll, rollLabel }: Props) {
   const solid = solidFor(sides);
   // Progress of the animation for one roll id; a new id starts again from 0.
   const [anim, setAnim] = useState<{ id: string | undefined; t: number }>({ id: rollId, t: 1 });
@@ -89,7 +93,7 @@ export function Die3D({ rollId, text, sides = 20, natural, className, label }: P
     .filter((x) => x.n[2] > 0.01)
     .sort((a, b) => a.c[2] - b.c[2]);
 
-  return (
+  const svg = (
     <svg className={`d20 die3d d${solid.sides}${className}`} viewBox="0 0 200 200" role="img" aria-label={label}>
       <g transform={`translate(0 ${-lift})`}>
         {visible.map(({ f, n, c }) => {
@@ -116,5 +120,12 @@ export function Die3D({ rollId, text, sides = 20, natural, className, label }: P
         })}
       </g>
     </svg>
+  );
+
+  if (!onRoll) return svg;
+  return (
+    <button type="button" className="die-button" onClick={onRoll} aria-label={rollLabel ?? 'Lancia'}>
+      {svg}
+    </button>
   );
 }

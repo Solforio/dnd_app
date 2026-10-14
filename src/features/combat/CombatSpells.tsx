@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useSpellCatalogue } from '../../data/spellCatalogue';
 import { formatNumber } from '../../domain/format/number';
 import { pactLeft, slotRows } from '../../domain/sheet/spellSlots';
@@ -14,7 +13,6 @@ import { useSheet } from '../sheet/sheetHooks';
 export function CombatSpells() {
   const s = useSheet();
   const { byId, status } = useSpellCatalogue();
-  const [message, setMessage] = useState('');
   const casters = s.classes.flatMap((c) => {
     const sc = spellClassOf(c);
     return sc ? [sc] : [];
@@ -54,14 +52,11 @@ export function CombatSpells() {
             {spells
               .filter((sp: Spell) => sp.level === level)
               .map((sp) => (
-                <SpellRow key={sp.id} spell={sp} canCast onCast={setMessage} />
+                <SpellRow key={sp.id} spell={sp} canCast />
               ))}
           </ul>
         </div>
       ))}
-      <p className="status-line small" role="status" aria-live="polite">
-        {message}
-      </p>
     </section>
   );
 }
