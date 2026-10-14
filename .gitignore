@@ -11,3 +11,6 @@ firebase-debug.log*
 
 # Map images loaded by the user: copyrighted, never committed (brief: copyright)
 faerun-images/
+
+# Worktrees of background agents (never committed)
+.claude/worktrees/
