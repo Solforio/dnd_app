@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import { useSpellCatalogue } from '../../data/spellCatalogue';
 import { addSpell, listOf, type Capacity, type SpellClass } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
+import { schoolLabel } from '../../domain/spellItalian';
 import { excerpt, levelLabel } from './labels';
 import { ReadButton } from './SpellRow';
 
@@ -27,7 +28,7 @@ export function SpellPicker({ sc, cap, onMessage }: { sc: SpellClass; cap: Capac
         (ignore || sp.classes.includes(sc.list)) &&
         sp.level <= top &&
         (level === 'all' || sp.level === Number(level)) &&
-        (q === '' || sp.name.toLowerCase().includes(q)),
+        (q === '' || sp.name.toLowerCase().includes(q) || (sp.nameEn ?? '').toLowerCase().includes(q)),
     );
   }, [spells, query, level, top, ignore, sc.list]);
 
@@ -57,7 +58,7 @@ export function SpellPicker({ sc, cap, onMessage }: { sc: SpellClass; cap: Capac
               <div className="spell-title">
                 <strong>{sp.name}</strong>
                 <span className="small muted">
-                  {levelLabel(sp.level)} · {sp.school}
+                  {levelLabel(sp.level)} · {schoolLabel(sp.school)}
                 </span>
               </div>
               <p className="small spell-excerpt">{excerpt(sp.text)}</p>

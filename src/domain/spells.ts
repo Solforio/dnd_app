@@ -8,6 +8,8 @@ import { casterKindOf, pactLeft, pactOf, slotRows, slotsFromClasses, spendPact, 
 export interface Spell {
   id: string;
   name: string;
+  /** The SRD English name, kept for searching once `name` is translated. */
+  nameEn?: string;
   /** 0 for cantrips. */
   level: number;
   school: string;
@@ -50,6 +52,23 @@ export function sanitizeCatalogue(raw: unknown): Spell[] {
     if (typeof s.material === 'string') spell.material = asString(s.material, 400);
     if (typeof s.higher === 'string') spell.higher = asString(s.higher, SPELL_LIMITS.textChars);
     return [spell];
+  });
+}
+
+/** Lays the Italian texts (public/srd/spells.it.json: id → name, material, text, higher) over the catalogue; spells without a translation stay English. */
+export function applyItalian(spells: Spell[], raw: unknown): Spell[] {
+  const overlay = asRecord(raw);
+  return spells.map((sp) => {
+    const t = asRecord(overlay[sp.id]);
+    const name = asString(t.name, 80);
+    const text = asString(t.text, SPELL_LIMITS.textChars);
+    if (!name || !text) return sp;
+    const out: Spell = { ...sp, name, nameEn: sp.name, text };
+    const material = asString(t.material, 400);
+    const higher = asString(t.higher, SPELL_LIMITS.textChars);
+    if (sp.material && material) out.material = material;
+    if (sp.higher && higher) out.higher = higher;
+    return out;
   });
 }
 

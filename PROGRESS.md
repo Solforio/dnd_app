@@ -298,3 +298,5 @@ Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (
 
 - **Dice animation**: done: `Die3D` + `d20geometry.ts`, a real icosahedron projected into SVG each frame (no library), tumbles ~1,1 s and lands with the natural d20 face in front showing the total; none with reduced motion, and the roll already on screen at page load does not tumble.
 - **HP on phones**: done: `HpQuick`, sticky at the top of the Tiri page below 860 px, with quick damage and healing.
+
+- **Spells in Italian**: `public/srd/spells.it.json` (id → name, text, higher, material; translated from the SRD 5.1 with the Italian Player's Handbook names, distances in metres/km, prices in mo/ma/mr) is laid over the English catalogue when it loads (`applyItalian`); the English name is kept in `nameEn` so search works with both. School, casting time, range and duration are translated on display (`src/domain/spellItalian.ts`); the data stays English because the duration parser reads it. Without the overlay file the app falls back to English.

@@ -1,4 +1,5 @@
 import { asArray, asBool, asInt, asRecord, asString } from '../schema/sanitize';
+import { durationLabel } from '../spellItalian';
 import type { Spell } from '../spells';
 import type { Sheet } from './sheet';
 
@@ -149,7 +150,7 @@ export function effectFromSpell(spell: Spell, id: string): Effect | null {
     name: spell.name,
     remaining: d.rounds,
     concentration: spell.concentration,
-    note: spell.duration,
+    note: durationLabel(spell.duration),
     spellId: spell.id,
   };
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSpellDialog } from '../../data/spellDialog';
 import type { Spell } from '../../domain/spells';
+import { castingTimeLabel, durationLabel, rangeLabel, schoolLabel } from '../../domain/spellItalian';
 import { levelLabel } from './labels';
 
 /** Everything the SRD says about a spell: facts, text and the higher-level effect. */
@@ -8,18 +9,18 @@ export function SpellBody({ spell }: { spell: Spell }) {
   return (
     <div className="stack">
       <p className="small muted">
-        {levelLabel(spell.level)} · {spell.school}
+        {levelLabel(spell.level)} · {schoolLabel(spell.school)}
         {spell.concentration && ' · Concentrazione'}
         {spell.ritual && ' · Rituale'}
       </p>
       <dl className="spell-facts small">
         <div>
           <dt>Tempo di lancio</dt>
-          <dd>{spell.castingTime}</dd>
+          <dd>{castingTimeLabel(spell.castingTime)}</dd>
         </div>
         <div>
           <dt>Gittata</dt>
-          <dd>{spell.range}</dd>
+          <dd>{rangeLabel(spell.range)}</dd>
         </div>
         <div>
           <dt>Componenti</dt>
@@ -30,7 +31,7 @@ export function SpellBody({ spell }: { spell: Spell }) {
         </div>
         <div>
           <dt>Durata</dt>
-          <dd>{spell.duration}</dd>
+          <dd>{durationLabel(spell.duration)}</dd>
         </div>
       </dl>
       {spell.text.split('\n\n').map((p, i) => (
@@ -84,7 +85,7 @@ export function SpellDialog() {
             <input type="checkbox" checked={autoOpen} onChange={(e) => setAutoOpen(e.target.checked)} />
             Apri questa finestra ogni volta che lancio un incantesimo
           </label>
-          <p className="small muted">Testo del System Reference Document 5.1 (CC-BY 4.0), in inglese.</p>
+          <p className="small muted">Testo del System Reference Document 5.1 (CC-BY 4.0), tradotto in italiano.</p>
         </div>
       )}
     </dialog>

@@ -103,7 +103,7 @@ describe('durations', () => {
 
   it('turns a spell into an effect with its concentration flag and text', () => {
     const spell = { id: 'bless', name: 'Bless', concentration: true, duration: 'Up to 1 minute' } as Parameters<typeof effectFromSpell>[0];
-    expect(effectFromSpell(spell, 'e1')).toEqual({ id: 'e1', name: 'Bless', remaining: 10, concentration: true, note: 'Up to 1 minute', spellId: 'bless' });
+    expect(effectFromSpell(spell, 'e1')).toEqual({ id: 'e1', name: 'Bless', remaining: 10, concentration: true, note: 'Fino a 1 minuto', spellId: 'bless' });
     expect(effectFromSpell({ ...spell, duration: 'Instantaneous' }, 'e2')).toBeNull();
   });
 });
