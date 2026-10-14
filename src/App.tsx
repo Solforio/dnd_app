@@ -12,6 +12,8 @@ import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
 import { CharactersPage } from './features/character/CharactersPage';
 import { SpellDialog, SpellNotice } from './features/grimoire/SpellDialog';
+import { BestiaryPage } from './features/bestiary/BestiaryPage';
+import { MonsterDialog } from './features/bestiary/MonsterDialog';
 import { CombatPage } from './features/combat/CombatPage';
 import { GrimoirePage } from './features/grimoire/GrimoirePage';
 import { D20Result } from './features/dice/D20Result';
@@ -76,6 +78,7 @@ const SECTIONS: [string, string][] = [
   ['/combattimento', 'combattimento'],
   ['/zaino', 'zaino'],
   ['/grimorio', 'grimorio'],
+  ['/bestiario', 'bestiario'],
   ['/mappe', 'mappe'],
   ['/gruppo', 'gruppo'],
 ];
@@ -126,6 +129,7 @@ export function App() {
           <Route path="/accedi" element={<SignInPage />} />
           <Route path="/scheda" element={<WithTabs><SheetPage /></WithTabs>} />
           <Route path="/combattimento" element={<WithTabs><CombatPage /></WithTabs>} />
+          <Route path="/bestiario" element={<WithTabs><BestiaryPage /></WithTabs>} />
           <Route path="/grimorio" element={<WithTabs><GrimoirePage /></WithTabs>} />
           <Route path="/zaino" element={<WithTabs><InventoryPage /></WithTabs>} />
           <Route path="/personaggi" element={<WithTabs><CharactersPage /></WithTabs>} />
@@ -144,6 +148,7 @@ export function App() {
         </main>
       )}
       <SpellDialog />
+      <MonsterDialog />
       <SpellNotice />
       <footer className="app-footer small muted">
         {phase === 'cloud'

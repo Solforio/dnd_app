@@ -33,6 +33,13 @@ const ICONS: Record<string, ReactNode> = {
     </>
   ),
   map: <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14" />,
+  skull: (
+    <>
+      <path d="M5 4c0 3 1 4 3 5 M19 4c0 3-1 4-3 5 M7 9c0-2 2-3 5-3s5 1 5 3v5c0 3-2 6-5 6s-5-3-5-6z M10 17h4" />
+      <circle cx="10" cy="12" r="1.1" />
+      <circle cx="14" cy="12" r="1.1" />
+    </>
+  ),
   banner: (
     <>
       <path d="M6 3v18 M6 4h13l-3.5 4.5L19 13H6" />
@@ -47,6 +54,7 @@ const TABS = [
   { to: '/combattimento', label: 'Combattimento', icon: 'swords', end: true },
   { to: '/zaino', label: 'Zaino', icon: 'satchel', end: true },
   { to: '/grimorio', label: 'Grimorio', icon: 'book', end: true },
+  { to: '/bestiario', label: 'Bestiario', icon: 'skull', end: true },
   { to: '/mappe', label: 'Mappe', icon: 'map', end: false },
   // Not `end`: the tab stays highlighted inside a party (/gruppo/:id).
   { to: '/gruppo', label: 'Gruppo', icon: 'banner', end: false },

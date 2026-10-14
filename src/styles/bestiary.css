@@ -1,0 +1,193 @@
+/* Bestiary: the catalogue list, the stat block and the party's Pokédex cards. */
+
+body[data-section='bestiario'] {
+  --accent: #d9729a;
+  --accent-bright: #f2a3c0;
+  --accent-deep: #a93c68;
+  --accent-rgb: 217 114 154;
+  --tint: rgb(150 50 100 / 0.38);
+}
+
+html[data-theme='parchment'] body[data-section='bestiario'] {
+  --accent: #a23a66;
+  --accent-bright: #e592b4;
+  --accent-deep: #7a2349;
+  --accent-rgb: 162 58 102;
+}
+
+.filters .grow {
+  flex: 1 1 200px;
+}
+
+.monster-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+}
+
+.monster-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name stats'
+    'info stats';
+  align-items: center;
+  gap: 0 var(--space-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.monster-row .monster-name {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.monster-row .small.muted {
+  grid-area: info;
+}
+
+.monster-row .monster-stats {
+  grid-area: stats;
+  white-space: nowrap;
+}
+
+/* --- Stat block --- */
+
+.monster-block {
+  gap: var(--space-2);
+}
+
+.block-line {
+  margin: 0;
+}
+
+.block-line.unknown {
+  color: var(--muted);
+}
+
+.block-abilities {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-block: 1px solid rgb(var(--accent-rgb) / 0.35);
+  text-align: center;
+}
+
+.block-abilities > div {
+  display: grid;
+  gap: 2px;
+}
+
+.block-section h3 {
+  margin: var(--space-2) 0 var(--space-1);
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.4);
+}
+
+.block-feature {
+  margin: 0 0 var(--space-2);
+}
+
+@media (max-width: 480px) {
+  .block-abilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .monster-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'name'
+      'info'
+      'stats';
+  }
+}
+
+/* --- The party's bestiary: cards like a Pokédex --- */
+
+.dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+}
+
+.dex-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-3) var(--space-2);
+  text-align: center;
+  border-radius: var(--leaf);
+}
+
+.dex-art {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--accent-rgb) / 0.22), rgb(0 0 0 / 0.25));
+  border: 1px solid rgb(var(--accent-rgb) / 0.5);
+}
+
+.dex-art svg {
+  width: 52px;
+  height: 52px;
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Nothing learned yet: only the shape of the creature shows. */
+.dex-card.silhouette .dex-art svg {
+  color: #000;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / 0.5));
+}
+
+.dex-card:not(.silhouette) .dex-art svg {
+  color: var(--accent-bright);
+}
+
+.dex-number {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.dex-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+.dex-progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.35);
+  overflow: hidden;
+}
+
+.dex-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent-bright));
+}
+
+.reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-1) var(--space-3);
+}
