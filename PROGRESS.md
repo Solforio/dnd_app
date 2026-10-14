@@ -238,7 +238,11 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 - **Durations**: SRD spell durations are text («1 minute», «Concentration, up to 1 hour»); a small parser turns «1 round» and minutes into rounds (1 minute = 10 rounds), longer durations stay manual. Tested like the dice parser.
 - **Difficulty**: M to L. **Depends on**: I6b (spell data with durations; the screen can start with manual effects and attacks before that), existing HP, conditions, attacks, slots. **Risks**: scope creep (initiative tracking belongs with the Master section, I7: the DM's shared initiative order could later feed «è il tuo turno»); end-of-turn versus start-of-turn expiry (start with «end of my turn»); duplicating UI instead of reusing the existing cards (reuse them).
 
-### UI and usability plan (proposal, 2026-10-14: nothing applied yet, waiting for the user's choice)
+### UI and usability plan (2026-10-14): strategies 1 and 2 applied, the rest proposed
+
+**Applied (user: «non ho preferenze, procedi»)**: `FoldCard` (`src/components/FoldCard.tsx`): a card whose title is a button, with a one-line summary while folded, state remembered per card id (`dnd-companion:fold:<id>`). Folded by default: Formula libera, Aspetto (figure), Dadi vita e livello, Impostazioni del peso; Storico and Abilità are foldable but open, and the history shows the last 5 with «Mostra tutti». Skills in play mode show only the proficient ones (or with an extra bonus) in a two-column grid, with «Mostra tutte le 18» (a new character with no proficiency sees all). The death-save pips on the Tiri page appear only at 0 HP or while some are marked. Measured on the dev character (desktop, stacked sum of the cards): Scheda 2727 → 1941 px, Zaino 913 → 675, Tiri 2219 → 2037 (page 1587 → 1405). Strategy 3 (rest of Tiri) and 5 (vital strip) are the next ones.
+
+(original proposal below)
 
 **Why**: pages are long and information gets lost. Measured on the live site (desktop 1707 px wide; «stacked» = the sum of the cards, a good estimate of a phone's scroll height): **Tiri** 1590 px (stacked 2131, 6 cards; HP 606, Vassoio 434), **Scheda** 1955 px (stacked 2577, 10 cards; Abilità alone 830, Caratteristiche 473, Dadi vita 276), **Combattimento** 1401 px (stacked 1413), **Zaino** 915 px (the weight settings card alone 305). The tab bar now has 7 entries.
 

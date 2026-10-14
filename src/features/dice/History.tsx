@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FoldCard } from '../../components/FoldCard';
 import { useCharacterStore } from '../../data/characterStore';
 import { HISTORY_LIMIT } from '../../domain/character';
 import { formatNumber } from '../../domain/format/number';
@@ -14,27 +15,27 @@ function when(at: number): string {
   return today ? timeFormat.format(d) : `${dayFormat.format(d)}, ${timeFormat.format(d)}`;
 }
 
+const RECENT = 5;
+
 export function History() {
   const history = useCharacterStore((s) => s.character.history);
   const clearHistory = useCharacterStore((s) => s.clearHistory);
   const [confirming, setConfirming] = useState(false);
+  const [all, setAll] = useState(false);
+  const shown = all ? history : history.slice(0, RECENT);
 
   return (
-    <section className="card stack" aria-labelledby="history-title">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2 id="history-title" style={{ margin: 0 }}>
-          Storico
-        </h2>
-        <span className="muted small">
-          {formatNumber(history.length)} di {formatNumber(HISTORY_LIMIT)}
-        </span>
-      </div>
+    <FoldCard
+      id="history"
+      title="Storico"
+      summary={history.length === 0 ? 'nessun tiro' : `${formatNumber(history.length)} tiri`}
+    >
 
       {history.length === 0 ? (
         <p className="muted">Ancora nessun tiro. I tuoi lanci compariranno qui.</p>
       ) : (
         <ol className="list history" aria-label="Ultimi tiri, dal più recente">
-          {history.map((r) => {
+          {shown.map((r) => {
             const state = r.crit ? ' crit' : r.fumble ? ' fumble' : '';
             return (
               <li key={r.id} className={`history-item${state}`}>
@@ -59,6 +60,13 @@ export function History() {
             );
           })}
         </ol>
+      )}
+      {history.length > RECENT && (
+        <div className="row">
+          <button type="button" className="ghost" aria-expanded={all} onClick={() => setAll((a) => !a)}>
+            {all ? 'Mostra solo gli ultimi 5' : `Mostra tutti (${formatNumber(history.length)} di ${formatNumber(HISTORY_LIMIT)})`}
+          </button>
+        </div>
       )}
 
       {history.length > 0 &&
@@ -87,6 +95,6 @@ export function History() {
             </button>
           </div>
         ))}
-    </section>
+    </FoldCard>
   );
 }

@@ -1,4 +1,5 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
+import { FoldCard } from '../../components/FoldCard';
 import { NumberField } from '../../components/NumberField';
 import { formatSigned } from '../../domain/format/number';
 import { ABILITY_LABELS, SKILL_INFO, SKILLS, type SkillId } from '../../domain/sheet/rules';
@@ -49,12 +50,16 @@ function SkillEdit({ skill }: { skill: SkillId }) {
 
 export function SkillsCard({ editing }: { editing: boolean }) {
   const s = useSheet();
+  const [showAll, setShowAll] = useState(false);
+  // In play only the skills that matter are shown (proficient or with an extra bonus), the rest on demand.
+  const notable = bySkillLabel.filter((k) => s.skills[k].prof !== 0 || s.skills[k].bonus !== 0);
+  const compact = !editing && notable.length > 0 && !showAll;
+  const list = compact ? notable : bySkillLabel;
 
   return (
-    <section className="card stack" aria-labelledby="skills-title">
-      <h2 id="skills-title">Abilità</h2>
-      <ul className="list compact">
-        {bySkillLabel.map((skill) => {
+    <FoldCard id="skills" title="Abilità" summary={`${notable.length} competenze`}>
+      <ul className={`list compact${editing ? '' : ' skill-grid'}`}>
+        {list.map((skill) => {
           const { label, ability } = SKILL_INFO[skill];
           const bonus = skillBonus(s, skill);
           const prof = String(s.skills[skill].prof);
@@ -80,12 +85,19 @@ export function SkillsCard({ editing }: { editing: boolean }) {
           );
         })}
       </ul>
+      {!editing && notable.length > 0 && (
+        <div>
+          <button type="button" className="ghost" aria-expanded={showAll} onClick={() => setShowAll((a) => !a)}>
+            {showAll ? 'Mostra solo le competenti' : `Mostra tutte le ${SKILLS.length} abilità`}
+          </button>
+        </div>
+      )}
       {!editing && (
         <p className="small muted">
           <span className="prof-dot ph" aria-hidden="true" /> mezza competenza · <span className="prof-dot p1" aria-hidden="true" /> competente ·{' '}
           <span className="prof-dot p2" aria-hidden="true" /> maestria
         </p>
       )}
-    </section>
+    </FoldCard>
   );
 }

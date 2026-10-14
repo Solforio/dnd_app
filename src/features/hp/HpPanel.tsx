@@ -9,6 +9,7 @@ import { DeathSaves } from './DeathSaves';
 export function HpPanel() {
   const hp = useCharacterStore((s) => s.character.hp);
   const status = useCharacterStore((s) => s.hpStatus);
+  const saves = useCharacterStore((s) => s.character.deathSaves);
   const { damage, heal, gainTemp, longRest, editHp } = useCharacterStore.getState();
   const [amount, setAmount] = useState('');
   const amountId = useId();
@@ -99,7 +100,8 @@ export function HpPanel() {
 
       <LevelUpSection />
 
-      <DeathSaves />
+      {/* Only when they matter: at 0 HP, or while some are still marked. */}
+      {(hp.cur === 0 || saves.successes > 0 || saves.failures > 0) && <DeathSaves />}
 
       <div>
         <button type="button" onClick={longRest}>

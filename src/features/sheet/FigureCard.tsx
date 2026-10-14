@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { FoldCard } from '../../components/FoldCard';
 import { useCharacterStore } from '../../data/characterStore';
 import { ensurePortraits, usePortraitStore } from '../../data/portraitStore';
 import { PictureControls } from '../portrait/PictureControls';
@@ -13,11 +14,10 @@ export function FigureCard() {
   }, [id]);
 
   return (
-    <section className="card stack" aria-labelledby="figure-title">
-      <h2 id="figure-title">Aspetto</h2>
+    <FoldCard id="figure" title="Aspetto" summary="Immagine a figura intera" defaultOpen={false}>
       {body && <img className="figure" src={body} alt={`Immagine a figura intera di ${name || 'questo personaggio'}`} />}
       <PictureControls characterId={id} kind="body" hasPicture={body !== null} />
       <p className="small muted">Resta sulla tua scheda: non viene mai mostrata al gruppo.</p>
-    </section>
+    </FoldCard>
   );
 }

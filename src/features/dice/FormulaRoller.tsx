@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from 'react';
+import { FoldCard } from '../../components/FoldCard';
 import { useCharacterStore } from '../../data/characterStore';
 import { parseFormula } from '../../domain/dice/parser';
 import { SavePresetForm } from './SavePresetForm';
@@ -28,8 +29,7 @@ export function FormulaRoller() {
   };
 
   return (
-    <section className="card stack" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`}>Formula libera</h2>
+    <FoldCard id="free-formula" title="Formula libera" summary="Scrivi una formula come 4d6kh3" defaultOpen={false}>
       <form className="stack" onSubmit={submit}>
         <div className="field">
           <label htmlFor={id}>Formula</label>
@@ -80,6 +80,6 @@ export function FormulaRoller() {
         Puoi tenere o scartare dadi: <code>kh</code> tiene i più alti, <code>kl</code> i più bassi, <code>dh</code> e{' '}
         <code>dl</code> scartano. Il vantaggio si applica a ogni <code>d20</code> singolo.
       </p>
-    </section>
+    </FoldCard>
   );
 }

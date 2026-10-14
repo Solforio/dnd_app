@@ -2088,3 +2088,58 @@ button.link {
   background: var(--surface2);
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.5);
 }
+
+/* Foldable cards and compact lists */
+.fold-head {
+  margin: 0;
+}
+
+.fold-head button {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fold-title {
+  flex: none;
+}
+
+.fold-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+.fold-chevron {
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.fold.open .fold-chevron {
+  transform: rotate(90deg);
+}
+
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  column-gap: var(--space-3);
+}
+
+.fold > [hidden] {
+  display: none;
+}

@@ -1,4 +1,5 @@
 import { useCharacterStore } from '../../data/characterStore';
+import { FoldCard } from '../../components/FoldCard';
 import { formatNumber } from '../../domain/format/number';
 import { hitDicePools } from '../../domain/sheet/hitDice';
 import { LevelUpSection } from './LevelUp';
@@ -12,8 +13,7 @@ export function HitDiceCard() {
   const spend = (i: number) => useCharacterStore.getState().spendHitDie(i);
 
   return (
-    <section className="card stack" aria-labelledby="hitdice-title">
-      <h2 id="hitdice-title">Dadi vita e livello</h2>
+    <FoldCard id="hitdice" title="Dadi vita e livello" summary={pools.map((p) => `d${p.die} ${p.left}/${p.total}`).join(" · ")} defaultOpen={false}>
       <ul className="plain stack">
         {pools.map((p) => (
           <li key={p.index} className="row" style={{ justifyContent: 'space-between' }}>
@@ -37,6 +37,6 @@ export function HitDiceCard() {
         lungo restituisce metà dei dadi vita totali (almeno uno).
       </p>
       <LevelUpSection />
-    </section>
+    </FoldCard>
   );
 }

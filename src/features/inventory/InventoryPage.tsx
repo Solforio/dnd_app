@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { FoldCard } from '../../components/FoldCard';
 import { NumberField } from '../../components/NumberField';
 import { useCharacterStore } from '../../data/characterStore';
 import { newId } from '../../domain/character';
@@ -229,8 +230,7 @@ export function InventoryPage() {
           </p>
         </section>
 
-        <section className="card stack" aria-labelledby="inv-settings-title">
-          <h2 id="inv-settings-title">Impostazioni del peso</h2>
+        <FoldCard id="inv-settings" title="Impostazioni del peso" defaultOpen={false}>
           <div className="row" style={{ alignItems: 'flex-end' }}>
             <NumberField
               label={`Capacità per punto di FOR (${unit})`}
@@ -270,7 +270,7 @@ export function InventoryPage() {
             Le monete pesano (50 monete = 1 lb)
           </label>
           <p className="small muted">1 lb = 0,5 kg, come nel Manuale del Giocatore italiano. I pesi sono salvati in libbre.</p>
-        </section>
+        </FoldCard>
       </div>
     </main>
   );
