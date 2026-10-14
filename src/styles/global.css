@@ -1806,3 +1806,33 @@ textarea {
   gap: var(--space-3);
   align-items: center;
 }
+
+/* Spell slots */
+.slot-row {
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.slot-label {
+  min-width: 7.5rem;
+}
+
+.slot-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pip {
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: transparent;
+}
+
+.pip.on {
+  background: var(--gold);
+}

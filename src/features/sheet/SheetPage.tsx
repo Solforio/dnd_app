@@ -9,6 +9,7 @@ import { HitDiceCard } from './HitDiceCard';
 import { IdentityCard } from './IdentityCard';
 import { RollStrip } from './RollStrip';
 import { SkillsCard } from './SkillsCard';
+import { SpellSlotsCard } from './SpellSlotsCard';
 import { TraitsCard } from './TraitsCard';
 
 /**
@@ -32,6 +33,7 @@ export function SheetPage() {
       <div className="column">
         <AttacksCard editing={editing} />
         <ConditionsCard />
+        <SpellSlotsCard editing={editing} />
         <FeaturesCard editing={editing} />
         <TraitsCard editing={editing} />
         <HitDiceCard />
@@ -46,8 +48,8 @@ export function SheetPage() {
             </button>
           </div>
           <p className="small muted">
-            Il riposo breve recupera le capacità «a riposo breve». Il riposo lungo riporta i PF al massimo, recupera tutte le
-            capacità, restituisce metà dei dadi vita e toglie un livello di indebolimento.
+            Il riposo breve recupera le capacità «a riposo breve» e gli slot del Patto del warlock. Il riposo lungo riporta i PF al massimo, recupera tutte le
+            capacità e slot incantesimo, restituisce metà dei dadi vita e toglie un livello di indebolimento.
           </p>
           <p className="status-line" role="status" aria-live="polite">
             {status}

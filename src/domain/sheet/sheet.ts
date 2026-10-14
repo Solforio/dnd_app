@@ -1,6 +1,7 @@
 import { formulaToText, parseFormula, DICE_LIMITS } from '../dice/parser';
 import type { FormulaTerm } from '../dice/types';
 import { isHitDie, recoverHitDice } from './hitDice';
+import { defaultSpellcasting, restoreSlots, SLOT_LEVELS, SPELLCASTING_LIMITS, type Spellcasting } from './spellSlots';
 import { asArray, asBool, asInt, asOneOf, asRecord, asString } from '../schema/sanitize';
 import {
   ABILITIES,
@@ -92,6 +93,7 @@ export interface Sheet {
   languages: string[];
   darkvisionM: number;
   otherProficiencies: string;
+  spellcasting: Spellcasting;
 }
 
 export const SHEET_LIMITS = {
@@ -132,6 +134,7 @@ export function defaultSheet(): Sheet {
     languages: ['Comune'],
     darkvisionM: 0,
     otherProficiencies: '',
+    spellcasting: defaultSpellcasting(),
   };
 }
 
@@ -199,6 +202,17 @@ function sanitizeFeature(raw: unknown, newId: () => string): Feature {
   };
 }
 
+function sanitizeSpellcasting(raw: unknown): Spellcasting {
+  const r = asRecord(raw);
+  const levels = (v: unknown, max: number) =>
+    Array.from({ length: SLOT_LEVELS }, (_, i) => asInt(Array.isArray(v) ? v[i] : 0, 0, max, 0));
+  return {
+    slotsUsed: levels(r.slotsUsed, 99),
+    pactUsed: asInt(r.pactUsed, 0, 99, 0),
+    manualMax: Array.isArray(r.manualMax) ? levels(r.manualMax, SPELLCASTING_LIMITS.slots) : null,
+  };
+}
+
 export function sanitizeSheet(raw: unknown, newId: () => string): Sheet {
   const s = asRecord(raw);
   const d = defaultSheet();
@@ -239,6 +253,7 @@ export function sanitizeSheet(raw: unknown, newId: () => string): Sheet {
       : d.languages,
     darkvisionM: asMetres(s.darkvisionM, 0),
     otherProficiencies: asString(s.otherProficiencies, SHEET_LIMITS.otherProficiencies),
+    spellcasting: sanitizeSpellcasting(s.spellcasting),
   };
 }
 
@@ -351,12 +366,20 @@ function restoreUses(s: Sheet, resets: readonly Reset[]): RestResult {
 }
 
 export function shortRest(s: Sheet): RestResult {
-  return restoreUses(s, ['short']);
+  const r = restoreUses(s, ['short']);
+  const slots = restoreSlots(r.sheet, 'short');
+  return { ...r, sheet: slots.sheet, restored: [...r.restored, ...slots.restored] };
 }
 
 /** Restores every use and removes one level of exhaustion (SRD, assuming food and drink). */
 export function longRestSheet(s: Sheet): RestResult {
   const r = restoreUses(s, ['short', 'long']);
   const dice = recoverHitDice(r.sheet);
-  return { ...r, hitDice: dice.recovered, sheet: { ...dice.sheet, exhaustion: Math.max(0, s.exhaustion - 1) } };
+  const slots = restoreSlots(dice.sheet, 'long');
+  return {
+    ...r,
+    hitDice: dice.recovered,
+    restored: [...r.restored, ...slots.restored],
+    sheet: { ...slots.sheet, exhaustion: Math.max(0, s.exhaustion - 1) },
+  };
 }
