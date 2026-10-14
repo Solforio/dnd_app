@@ -4,6 +4,7 @@ import { NumberField } from '../../components/NumberField';
 import { TextField } from '../../components/TextField';
 import { useCharacterStore } from '../../data/characterStore';
 import { d20Formula, initiative, passivePerception, sheetProficiency, SHEET_LIMITS, totalLevel } from '../../domain/sheet/sheet';
+import { hitDieOf, HIT_DIE_OPTIONS } from '../../domain/sheet/hitDice';
 import { LEVEL_MAX } from '../../domain/sheet/rules';
 import { capacityLb, carriedWeightLb, encumbrance, speedPenaltyM } from '../../domain/inventory';
 import { formatNumber, formatSigned } from '../../domain/format/number';
@@ -85,6 +86,21 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
                   <TextField label="Classe" value={c.name} maxLength={40} onChange={(name) => setClass({ name })} />
                   <TextField label="Sottoclasse" value={c.subclass} maxLength={60} onChange={(subclass) => setClass({ subclass })} />
                   <NumberField label="Livello" value={c.level} min={1} max={LEVEL_MAX} onCommit={(level) => setClass({ level })} />
+                  <div className="field">
+                    <label htmlFor={`hitdie-${i}`}>Dado vita</label>
+                    <select
+                      id={`hitdie-${i}`}
+                      value={c.hitDie}
+                      onChange={(e) => setClass({ hitDie: Number(e.target.value) })}
+                    >
+                      <option value={0}>Auto (d{hitDieOf(c)})</option>
+                      {HIT_DIE_OPTIONS.map((d) => (
+                        <option key={d} value={d}>
+                          d{d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {s.classes.length > 1 && (
                     <button
                       type="button"
@@ -102,7 +118,7 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
               <div>
                 <button
                   type="button"
-                  onClick={() => editSheet((x) => ({ ...x, classes: [...x.classes, { name: '', subclass: '', level: 1 }] }))}
+                  onClick={() => editSheet((x) => ({ ...x, classes: [...x.classes, { name: '', subclass: '', level: 1, hitDie: 0, hitDiceUsed: 0 }] }))}
                 >
                   Aggiungi una classe (multiclasse)
                 </button>

@@ -4,6 +4,7 @@ import { AbilitiesCard } from './AbilitiesCard';
 import { AttacksCard } from './AttacksCard';
 import { ConditionsCard } from './ConditionsCard';
 import { FeaturesCard } from './FeaturesCard';
+import { HitDiceCard } from './HitDiceCard';
 import { IdentityCard } from './IdentityCard';
 import { RollStrip } from './RollStrip';
 import { SkillsCard } from './SkillsCard';
@@ -31,6 +32,7 @@ export function SheetPage() {
         <ConditionsCard />
         <FeaturesCard editing={editing} />
         <TraitsCard editing={editing} />
+        <HitDiceCard />
         <section className="card stack" aria-labelledby="rest-title">
           <h2 id="rest-title">Riposi</h2>
           <div className="row">
@@ -43,7 +45,7 @@ export function SheetPage() {
           </div>
           <p className="small muted">
             Il riposo breve recupera le capacità «a riposo breve». Il riposo lungo riporta i PF al massimo, recupera tutte le
-            capacità e toglie un livello di indebolimento.
+            capacità, restituisce metà dei dadi vita e toglie un livello di indebolimento.
           </p>
           <p className="status-line" role="status" aria-live="polite">
             {status}

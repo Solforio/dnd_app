@@ -24,7 +24,7 @@ import {
 function thorin(): Character {
   const c = createCharacter('Thorin');
   c.hp = { cur: 30, max: 44, temp: 5 };
-  c.sheet.classes = [{ name: 'Guerriero', subclass: '', level: 5 }];
+  c.sheet.classes = [{ name: 'Guerriero', subclass: '', level: 5, hitDie: 0, hitDiceUsed: 0 }];
   c.sheet.abilities.wis = 13;
   c.sheet.skills.perception = { prof: 1, bonus: 0 };
   c.sheet.skills.athletics = { prof: 2, bonus: 0 };

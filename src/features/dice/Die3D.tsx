@@ -1,18 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  apply,
-  axisAngle,
-  dot,
-  easeOutCubic,
-  FACES,
-  faceToViewer,
-  hash,
-  multiply,
-  normalize,
-  VERTICES,
-  type Mat3,
-  type Vec3,
-} from './d20geometry';
+import { apply, axisAngle, dot, easeOutCubic, hash, multiply, normalize, type Mat3, type Vec3 } from './d20geometry';
+import { faceToViewerOf, solidFor } from './solids';
 
 const DURATION_MS = 1100;
 const LIGHT = normalize([-0.45, 0.65, 1]);
@@ -47,7 +35,9 @@ interface Props {
   rollId: string | undefined;
   /** What the front face shows once the die stops. */
   text: string;
-  /** The natural d20, when there is one: that face ends up in front. */
+  /** Sides of the die drawn: the first dice term of the roll (a d100 is drawn as a d10). Default d20. */
+  sides?: number;
+  /** The natural roll of that die, when there is exactly one: that face ends up in front. */
   natural?: number;
   className: string;
   label: string;
@@ -58,7 +48,8 @@ interface Props {
  * every frame. It tumbles, bounces and settles with the result towards the
  * viewer. With reduced motion it simply appears in its final position.
  */
-export function Die3D({ rollId, text, natural, className, label }: Props) {
+export function Die3D({ rollId, text, sides = 20, natural, className, label }: Props) {
+  const solid = solidFor(sides);
   // Progress of the animation for one roll id; a new id starts again from 0.
   const [anim, setAnim] = useState<{ id: string | undefined; t: number }>({ id: rollId, t: 1 });
   // The roll already on screen when the page opens does not tumble again.
@@ -80,8 +71,8 @@ export function Die3D({ rollId, text, natural, className, label }: Props) {
   }, [rollId, animate]);
 
   const seed = hash(rollId ?? 'idle');
-  const target = FACES.find((f) => f.value === natural) ?? FACES[seed % FACES.length]!;
-  const final = faceToViewer(target);
+  const target = solid.faces.find((f) => f.value === natural) ?? solid.faces[seed % solid.faces.length]!;
+  const final = faceToViewerOf(solid, target);
   // Before the first roll the die rests slightly turned, so it reads as a solid.
   const idle: Mat3 = multiply(axisAngle(normalize([1, 0.4, 0]), -0.35), final);
 
@@ -93,13 +84,13 @@ export function Die3D({ rollId, text, natural, className, label }: Props) {
   const lift = (1 - progress) * 34 * Math.abs(Math.cos(progress * 3 * Math.PI));
   const settled = progress >= 1;
 
-  const points = VERTICES.map((v) => apply(rotation, v));
-  const visible = FACES.map((f) => ({ f, n: apply(rotation, f.normal), c: apply(rotation, f.centroid) }))
+  const points = solid.vertices.map((v) => apply(rotation, v));
+  const visible = solid.faces.map((f) => ({ f, n: apply(rotation, f.normal), c: apply(rotation, f.centroid) }))
     .filter((x) => x.n[2] > 0.01)
     .sort((a, b) => a.c[2] - b.c[2]);
 
   return (
-    <svg className={`d20 die3d${className}`} viewBox="0 0 200 200" role="img" aria-label={label}>
+    <svg className={`d20 die3d d${solid.sides}${className}`} viewBox="0 0 200 200" role="img" aria-label={label}>
       <g transform={`translate(0 ${-lift})`}>
         {visible.map(({ f, n, c }) => {
           const poly = f.v.map((i) => project(points[i]!).join(',')).join(' ');
@@ -115,7 +106,7 @@ export function Die3D({ rollId, text, natural, className, label }: Props) {
                 y={cy + 1}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize={front ? fontSize(value) : 15 * n[2]}
+                fontSize={front ? fontSize(value) * solid.textScale : solid.labelSize * n[2]}
                 opacity={front ? 1 : settled ? 0.3 * n[2] : 0.85 * n[2]}
               >
                 {value}

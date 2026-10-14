@@ -4,15 +4,22 @@ import { MODE_LABEL } from './labels';
 import { RollBreakdown } from './RollBreakdown';
 import { Die3D } from './Die3D';
 
-/** The natural d20 of a roll, when exactly one d20 was kept: its face ends up in front. */
-function naturalD20(roll: RollRecord): number | undefined {
-  const kept = roll.terms.flatMap((t) => t.dice).filter((d) => d.sides === 20 && d.kept);
+/** The die drawn: the first kind of die in the formula, a d20 when the roll has none. */
+function shownSides(roll: RollRecord | undefined): number {
+  return roll?.terms.find((t) => t.dice.length > 0)?.dice[0]!.sides ?? 20;
+}
+
+/** The natural roll of the drawn die, when exactly one of that kind was kept: its face ends up in front. */
+function naturalRoll(roll: RollRecord, sides: number): number | undefined {
+  if (sides === 100) return undefined;
+  const kept = roll.terms.flatMap((t) => t.dice).filter((d) => d.sides === sides && d.kept);
   return kept.length === 1 ? kept[0]!.value : undefined;
 }
 
 /** The memorable element: a large d20 showing the last total. */
 export function D20Result({ roll }: { roll: RollRecord | undefined }) {
   const text = roll ? formatNumber(roll.total) : '–';
+  const sides = shownSides(roll);
   const state = roll?.crit ? ' crit' : roll?.fumble ? ' fumble' : '';
   const modeText = roll && roll.mode !== 'normal' ? MODE_LABEL[roll.mode] : '';
   const announcement = roll
@@ -25,7 +32,8 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
       <Die3D
         rollId={roll?.id}
         text={text}
-        natural={roll ? naturalD20(roll) : undefined}
+        sides={sides}
+        natural={roll ? naturalRoll(roll, sides) : undefined}
         className={state}
         label={roll ? `Risultato ${text}` : 'Nessun tiro ancora'}
       />

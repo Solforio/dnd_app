@@ -26,7 +26,7 @@ const newId = () => `id${++counter}`;
 /** A level 5 fighter: STR 16, DEX 12, WIS 13, Athletics and Perception proficient. */
 function fighter(): Sheet {
   const s = defaultSheet();
-  s.classes = [{ name: 'Guerriero', subclass: 'Campione', level: 5 }];
+  s.classes = [{ name: 'Guerriero', subclass: 'Campione', level: 5, hitDie: 0, hitDiceUsed: 0 }];
   s.abilities = { ...s.abilities, str: 16, dex: 12, con: 15, wis: 13 };
   s.saves.str = { proficient: true, bonus: 0 };
   s.saves.con = { proficient: true, bonus: 1 };
@@ -61,8 +61,8 @@ describe('ability modifiers and proficiency', () => {
   });
 
   it('sums multiclass levels, clamped to 1..20', () => {
-    expect(totalLevel([{ name: 'Mago', subclass: '', level: 3 }, { name: 'Chierico', subclass: '', level: 1 }])).toBe(4);
-    expect(totalLevel([{ name: 'A', subclass: '', level: 15 }, { name: 'B', subclass: '', level: 10 }])).toBe(20);
+    expect(totalLevel([{ name: 'Mago', subclass: '', level: 3, hitDie: 0, hitDiceUsed: 0 }, { name: 'Chierico', subclass: '', level: 1, hitDie: 0, hitDiceUsed: 0 }])).toBe(4);
+    expect(totalLevel([{ name: 'A', subclass: '', level: 15, hitDie: 0, hitDiceUsed: 0 }, { name: 'B', subclass: '', level: 10, hitDie: 0, hitDiceUsed: 0 }])).toBe(20);
   });
 });
 
@@ -110,9 +110,9 @@ describe('attacks', () => {
   });
 
   it('describes classes', () => {
-    expect(classSummary([{ name: '', subclass: '', level: 1 }])).toBe('Livello 1');
+    expect(classSummary([{ name: '', subclass: '', level: 1, hitDie: 0, hitDiceUsed: 0 }])).toBe('Livello 1');
     expect(
-      classSummary([{ name: 'Mago', subclass: '', level: 3 }, { name: 'Chierico ', subclass: '', level: 1 }]),
+      classSummary([{ name: 'Mago', subclass: '', level: 3, hitDie: 0, hitDiceUsed: 0 }, { name: 'Chierico ', subclass: '', level: 1, hitDie: 0, hitDiceUsed: 0 }]),
     ).toBe('Mago 3 / Chierico 1');
   });
 
@@ -177,7 +177,7 @@ describe('sanitizeSheet', () => {
       },
       newId,
     );
-    expect(s.classes).toEqual([{ name: 'Ladro', subclass: '', level: 20 }]);
+    expect(s.classes).toEqual([{ name: 'Ladro', subclass: '', level: 20, hitDie: 0, hitDiceUsed: 0 }]);
     expect(s.abilities).toMatchObject({ str: 30, dex: 1, con: 10 });
     expect(s.skills.stealth.prof).toBe(0);
     expect(s.skills.arcana).toEqual({ prof: 0.5, bonus: 50 });

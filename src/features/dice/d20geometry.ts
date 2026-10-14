@@ -50,7 +50,7 @@ export const VERTICES: readonly Vec3[] = (
 
 export interface Face {
   /** Vertex indices, counter-clockwise seen from outside. */
-  v: readonly [number, number, number];
+  v: readonly number[];
   /** Outward unit normal (also the centroid direction). */
   normal: Vec3;
   centroid: Vec3;
@@ -94,7 +94,7 @@ export const FACES: readonly Face[] = buildFaces();
  */
 export function faceToViewer(face: Face): Mat3 {
   const z = face.normal;
-  const toVertex = sub(VERTICES[face.v[0]]!, face.centroid);
+  const toVertex = sub(VERTICES[face.v[0]!]!, face.centroid);
   const y = normalize(sub(toVertex, scale(z, dot(toVertex, z))));
   const x = cross(y, z);
   return [x, y, z];

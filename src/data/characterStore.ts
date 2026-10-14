@@ -13,7 +13,9 @@ import { cryptoDie } from '../domain/dice/rng';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
 import type { Inventory } from '../domain/inventory';
-import { longRestSheet, shortRest, type RestResult, type Sheet } from '../domain/sheet/sheet';
+import { hitDicePools, hpGain, levelUp, spendHitDie } from '../domain/sheet/hitDice';
+import { abilityMod, longRestSheet, shortRest, type RestResult, type Sheet } from '../domain/sheet/sheet';
+import { formatSigned } from '../domain/format/number';
 import {
   addAndSelect,
   duplicate,
@@ -58,6 +60,10 @@ interface CharacterStore {
   heal: (amount: number) => void;
   gainTemp: (amount: number) => void;
   longRest: () => void;
+  /** Raises a class by one level: max and current HP grow by the gain (die value + CON, min 1). Returns an error text, or null. */
+  levelUp: (classIndex: number, die: number, base: number) => string | null;
+  /** Rolls one hit die of a class plus CON and heals by the total. */
+  spendHitDie: (classIndex: number) => void;
   shortRest: () => void;
   editHp: (patch: Partial<hpRules.Hp>) => void;
   setDeathSaves: (saves: { successes: number; failures: number }) => void;
@@ -170,8 +176,40 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
     longRest: () => {
       const change = hpRules.longRest(vitals());
       const rest = longRestSheet(get().character.sheet);
+      const dice = rest.hitDice > 0 ? ` Dadi vita recuperati: ${rest.hitDice}.` : '';
       const exhaustion = rest.sheet.exhaustion < get().character.sheet.exhaustion ? ' Un livello di indebolimento in meno.' : '';
-      applyVitals({ ...change, message: change.message + restoredText(rest) + exhaustion }, { sheet: rest.sheet });
+      applyVitals({ ...change, message: change.message + restoredText(rest) + dice + exhaustion }, { sheet: rest.sheet });
+    },
+    levelUp: (classIndex, die, base) => {
+      const c = get().character;
+      const sheet = levelUp(c.sheet, classIndex, die);
+      if (!sheet) return 'Non puoi superare il livello 20.';
+      const conMod = abilityMod(c.sheet.abilities.con);
+      const gain = hpGain(Math.trunc(base), conMod);
+      const cls = sheet.classes[classIndex]!;
+      const change = hpRules.editHp(vitals(), { max: c.hp.max + gain, cur: c.hp.cur + gain });
+      applyVitals(
+        {
+          ...change,
+          message: `${cls.name.trim() || 'Classe'} sale al livello ${cls.level}: +${gain} PF massimi (dado ${Math.trunc(base)}, COS ${formatSigned(conMod)}). PF ${change.vitals.hp.cur}/${change.vitals.hp.max}.`,
+        },
+        { sheet },
+      );
+      return null;
+    },
+    spendHitDie: (classIndex) => {
+      const c = get().character;
+      const pool = hitDicePools(c.sheet)[classIndex];
+      if (!pool || pool.left <= 0) return;
+      const conMod = abilityMod(c.sheet.abilities.con);
+      const formula = `1d${pool.die}${conMod === 0 ? '' : conMod < 0 ? `-${-conMod}` : `+${conMod}`}`;
+      const record = makeRecord(formula, 'normal', `Dado vita (${pool.name})`);
+      if (typeof record === 'string') return;
+      const change = hpRules.applyHealing(vitals(), Math.max(0, record.total));
+      applyVitals(
+        { ...change, message: `Dado vita d${pool.die}: ${Math.max(0, record.total)} PF. ${change.message}` },
+        { sheet: spendHitDie(c.sheet, classIndex), history: addToHistory(c.history, record) },
+      );
     },
     shortRest: () => {
       const rest = shortRest(get().character.sheet);

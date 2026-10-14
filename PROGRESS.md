@@ -13,6 +13,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | 4: inventory and weight | **done** (2026-10-13) |
 | maps (built before 5 to 7, user request) | **done** (2026-10-14); rules (38 tests) deployed; two-user emulator check passes |
 | 5+: notes, codex, PWA | not started |
+| ideas I1 to I7 (see "Ideas") | registered 2026-10-14; I3 and I4 coded (visual check pending), rest not started |
 
 ## Phase 0: what exists
 
@@ -138,6 +139,91 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 
 - `src/domain/sheet/conditionEffects.ts`: SRD 5.1 summaries and full text of the 14 conditions and 6 exhaustion levels, implied conditions; shown under the conditions on the sheet («Effetti attivi»), with the CC-BY attribution.
 
+## Ideas (proposed by the user, 2026-10-14)
+
+Proposals, not work orders. I decide order and timing, tick the box when done, and write here every change of plan or doubt. Difficulty: S small, M medium, L large. Rough build order is in "Chosen order" below.
+
+### [ ] I1. Preloaded Faerûn map, available offline, plus hand-added maps
+
+- **State**: manual maps already exist (Maps phase). What is missing is the "already there" part.
+- **Problem**: the images are WotC material (SOURCES.txt in `faerun-images/`). The site is public, so they can be neither in the repo nor in `public/`, nor in the build output on Pages. Also note: `faerun-images/Faerun_immagini_5e.zip` is not on disk any more; only the extracted `Faerun/` folder is (gitignored).
+- **Change of plan (not "preloaded for everyone")**: the images cannot ship with the app, so "preloaded" becomes "one-time bulk import per device":
+  1. A static `public/maps-catalog.json` (names, hierarchy, expected file names, **no images**) describes the Faerûn tree: world map, Sword Coast, one sub-map per city.
+  2. «Importa pacchetto mappe»: the user picks the folder (`<input webkitdirectory>`, no dependency) or the zip (would need a small unzip library, e.g. `fflate`: ask first). Files are matched to catalog entries by file name; the tree is created in one go (personal maps, `parentId` set), images go to the existing IndexedDB store.
+  3. Offline: IndexedDB already works offline once imported. The app shell itself needs the PWA phase (service worker). Add `navigator.storage.persist()` so the browser does not evict the images.
+- **Difficulty**: M. **Depends on**: PWA (offline shell), existing map store. **Risks**: iOS Safari evicts site data after about 7 days without use unless the app is installed to the home screen; every device (and every player) must import once; ~100 MB of images may be slow on phones. Fan-made maps with a compatible licence could replace the WotC set later without any code change.
+
+### [ ] I2. Character photos: portrait, plus full-body on the sheet
+
+- **Plan**: portrait shown on the sheet, in the header switcher and in the party member cards (Gruppi); the full-body picture only on the sheet.
+- **No Cloud Storage (Blaze)**, so pictures are downscaled in the browser (portrait about 256 px WebP/JPEG, ~15 to 30 KB; full-body about 768 px, ~80 to 150 KB) and stored as base64 in a **separate small document**, not inside the character (the character is rewritten on every debounced save and has the 1 MiB limit):
+  - own portrait + full-body: `users/{uid}/portraits/{characterId}` (owner only);
+  - shared portrait: `parties/{pid}/members/{uid}/portrait/main` (portrait only, never the full-body), written when the user shares it, read once per member when the party page opens.
+  - Logged out: IndexedDB, like map images.
+- **Difficulty**: M. **Depends on**: `imageStore.prepareImage` (reuse the downscaler), new rules + tests. **Risks**: base64 inflates size by a third (still tiny); members could upload any picture to a shared party (moderation is up to the group; the DM can remove a member's portrait: add a rule for that); quota is 1 write per photo change, 1 read per member on opening a party.
+
+### [x] I3. 3D animation for every die (code done 2026-10-14, visual check pending)
+
+- **Done**: `src/features/dice/solids.ts` builds the d4 (tetrahedron), d6 (cube), d8 (octahedron), d10/d100 (pentagonal trapezohedron, planar kites) and d12 (dodecahedron); the d20 stays in `d20geometry.ts`. `Die3D` takes `sides`; `D20Result` picks the **first term with dice**, falls back to the d20 for flat-only or unusual dice (d3, d7…), and draws a d100 as a d10. The natural face goes in front when exactly one die of that kind was kept (not for the d100). `solids.test.ts` checks shape, planarity, convexity, numbering (opposite faces add up to n+1) and upright facing for every solid. Typecheck, lint and 164 tests pass.
+- **Not verified by eye**: the browser extension was not connected, so the font sizes of the total on each solid (`textScale`) and the look of the d10 are untested on screen. The d4 shows its number at the face centre, not at the vertex like a real one.
+- Original note follows.
+
+- Already in the Backlog (user request 2026-10-14). `Die3D` + `d20geometry.ts` project a real icosahedron to SVG each frame, no library.
+- Add the solids: tetrahedron (d4), cube (d6), octahedron (d8), pentagonal trapezohedron (d10 and d100), dodecahedron (d12). Several kinds in one roll: the animation uses the **first dice term of the formula**; the number of dice still shows in the result. d100 is shown as one d10 solid (the result strip already shows the two parts).
+- **Difficulty**: M (geometry, "which face is up" per solid, label placement on triangles vs pentagons vs kites). **Depends on**: nothing. **Risks**: low; keep reduced motion, the no-tumble-on-load rule and the natural-20 face logic; unit tests for each solid (face count, vertices on the unit sphere, face normals). The d4 shows its number at the vertex up, so use the "top reading" convention for it.
+
+### [x] I4. Level-up: raise HP and choose the hit die (code done 2026-10-14, visual check pending)
+
+- **Done**: `ClassEntry` gained `hitDie` (0 = SRD die for the class name, Italian or English; d8 if unknown) and `hitDiceUsed`. **No character version bump**: the fields live inside the nested sheet and `sanitizeSheet` defaults them, so old documents and exports load unchanged (tested). Domain in `src/domain/sheet/hitDice.ts` (+ tests); store actions `levelUp` and `spendHitDie`; UI `HitDiceCard` on the Scheda page (spend a die: rolls die + CON through the dice module, so it shows in the roll strip and history, and heals; «Sali di livello» form with roll / fixed value / typed value, die choice, preview of the gain) and a hit die select per class in edit mode. Long rest regains half the total dice (min 1, biggest first); short rest recovers none (SRD).
+- **Decisions**: gain = die value + CON modifier, at least 1 (SRD); max and current HP both grow by it; a later CON change is **not** retroactive (the «Ricalcola dal COS» button is not built: add it if wanted). The manual level field in edit mode still changes the level without touching HP. Level-up is not offered on the Tiri page. Typecheck, lint, 172 tests, build pass; not checked in a browser.
+- Original note follows.
+
+- On level-up (or when a class level is added) the user picks per level: **roll the hit die**, **take the average** (SRD: ½ die + 1), or **type a value**; CON modifier is added; the class's hit die can be set (free choice, default from the SRD class table). Max HP and current HP grow by the same amount. A change of CON modifier later is not retroactive unless the user asks (button «Ricalcola dal COS»).
+- This needs **hit dice tracking**, which is the open question in this file: spend on a short rest, recover half (min 1) on a long rest. I fold it into this idea since the data (die per class, level) is the same.
+- **Difficulty**: S to M. **Depends on**: sheet `classes` (multiclass: one hit die per class, pool per die type), HP domain. **Risks**: sheet max HP is typed by hand today, so migration must not rewrite it (character v4 adds `hitDice` with sensible defaults, empty = untracked). Level-up dialog must show the exact arithmetic.
+
+### [ ] I5. Bestiary: full monster list + party "Pokédex" bestiary
+
+- **Two parts**:
+  - A. **Monster list**: all SRD 5.1 monsters (~330) as static JSON in `public/` (CC-BY attribution already in the app), lazy-loaded, searchable, filters by type, CR and size.
+  - B. **Party bestiary** on the Gruppi page: starts **empty**; entries are created by hand (pick an SRD monster or type a custom one, since homebrew and non-SRD monsters exist), then filled with what the DM reveals during play: seen/unseen silhouette, known AC, HP, resistances, abilities, notes, where met. Pokédex style = grid of cards, silhouette until discovered.
+- **Sync**: `parties/{pid}/bestiary/{entryId}`, one document per entry (concurrent edits on different monsters do not collide). Same permission pattern as the party pins: any member adds and edits notes, author or DM deletes (to be decided, see Chosen order). Listener only while the page is open.
+- **Difficulty**: L (data import and size; party sync and rules). **Depends on**: SRD JSON (not in the repo yet: needs a download from an SRD source; I will check the licence and note it), PWA for caching. **Risks**: SRD names are in English (the app is Italian: keep the English name as the key and let the user add an Italian name); JSON size (~1 MB) must stay lazy; quota ≈ 1 read per discovered entry on opening, 1 write per edit; set a limit (e.g. 300 entries).
+
+### [ ] I6. Grimoire: spells, slots, rests
+
+- **Rules to implement (SRD 5.1)**:
+  - Slots per level from class level: full casters (bard, cleric, druid, sorcerer, wizard), half casters (paladin, ranger, round **up** as in the SRD multiclass table), third casters (eldritch knight, arcane trickster), **multiclass slot table**, warlock **Pact Magic** (separate slots, recovered on a **short** rest).
+  - Known vs prepared: **wizard** has a spellbook (adds 2 per level) and prepares INT mod + level; **cleric, druid** prepare WIS mod + level from the whole class list; **paladin** prepares CHA mod + half level; **sorcerer, bard, warlock, ranger** know a fixed number from the class table (and can swap one on level-up). Cantrips known per class table.
+  - Slots are spent in play (also casting at a higher level) and recovered on long rest; Arcane Recovery (wizard) on a short rest; warlock on a short rest. The same recharge model drives class features: **features already have a «riposo breve / lungo» recharge** (Phase 2), so spell slots and features share one `Recharge` concept instead of two.
+- **Change of plan (flagged)**: "divine vs arcane" is **not a rule in 5e** (only a flavour label; no mechanical difference). I implement the mechanical differences that matter, which are the ones in the list above (prepared-from-whole-list vs spellbook vs known). The label «Divina / Arcana / Primordiale» can be shown as a tag on the class if wanted.
+- **Order inside this idea**: (a) slots, pact slots, spending and rests, no spell data needed; (b) the SRD spell list (~320 spells) as static JSON, per-class lists, known/prepared with the counts above, cantrips; (c) concentration and ritual markers.
+- **Difficulty**: L (the biggest idea). **Depends on**: hit dice/level-up (I4) for the level tables, SRD spell data, PWA caching, sheet classes. **Risks**: correctness of tables (every one gets a test); multiclass casters; subclass casters (eldritch knight) need a subclass field; spell text is English SRD; character v5 needs a migration (`spellcasting` empty by default).
+
+### [ ] I7. Master section (DM area)
+
+- **What it does**: the party's DM sees the participants' sheets, assigns conditions, adds or removes HP, "and so on".
+- **Why this is the hard one**: until now every character is written only by its owner (rules: owner only; party cards are opt-in summaries). Letting the DM write to someone else's character would clash with the owner's debounced last-write-wins save (the DM's change would be overwritten, or would overwrite theirs), and no Cloud Functions exist on Spark.
+- **Proposed design (to confirm with the user before building)**:
+  1. **Visibility**: a per-party opt-in «Condividi la scheda completa con il Master» publishes a full read-only snapshot to the member card (`parties/{pid}/members/{uid}/sheet`, bigger than the summary, same 3 s debounce; history and inventory can be left out). The DM sees it read-only. Default off. Honest about what the DM can read.
+  2. **Changes go through a command queue, not direct writes**: the DM creates `parties/{pid}/commands/{id}` (`targetUid`, `kind`: `damage | heal | tempHp | addCondition | removeCondition | …`, `amount`, `by`, `at`). The target's client, while the app is open, listens to its own commands (one query), applies each with the **existing domain functions** (`applyDamage`, conditions…), then deletes the command and a line goes to the party log («Il Master ha inflitto 7 danni a X»). So the character document keeps a single writer and there are no conflicts.
+  3. Rules: DM may create commands for members; only the target may read and delete them; field-level validation; rules tests.
+  4. Tab «Master» shown only when the user owns a party.
+- **Limits to accept**: a change is applied only when the player's device is online with the app open (the DM sees "in attesa" until then). Pending commands older than N hours expire.
+- **Difficulty**: L. **Depends on**: Phase 3 parties, HP/condition domain functions (already pure), the bestiary pattern (I5) for DM-only tools later. **Risks**: privacy (opt-in required), abuse (a DM applying commands the player never sees: always log them and show a toast), quota (a listener per device on the commands collection: reads only when a command arrives; snapshot publishing adds ~1 write per change for opted-in members), rules complexity. A "player must accept" mode is possible later.
+
+### Chosen order (2026-10-14)
+
+1. **I3** 3D dice: already requested as the next step, no dependencies, no sync.
+2. **I4** (done) Level-up HP + hit dice: small, closes the open question, and its class/level data is needed by I6.
+3. **I2** Photos: introduces "small image in Firestore" and the first rules change for shared data, simpler than the bestiary.
+4. **I6a** Spell slots + rests (no spell data); I6b/c later.
+5. **I5** Bestiary (monster list first, party bestiary second): first feature with shared data written by every member; reuses the pins pattern.
+6. **I7** Master: needs the commands channel and a privacy decision, builds on all of the above; last of the sync features.
+7. **I1** Faerûn bulk import: best done together with the PWA phase (offline shell), since offline is part of the request.
+
+Status: nothing started yet (only registered).
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
@@ -145,17 +231,17 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 ## Open questions
 
-- Hit dice tracking (spend on short rest, recover half on long rest): not in the brief, propose it if the user wants it.
+- (Hit dice tracking: done with I4.)
 
 ## Next step
 
-1. The 3D die that matches the dice rolled (see Backlog). Then:
+1. Follow the "Chosen order" in the Ideas section (starts with I3, the 3D dice, the same item as the Backlog entry below).
 2. User tries maps on https://solforio.github.io/dnd_app/ (personal, then a party map with a friend).
-3. Then Phase 5 (notes), unless the user asks otherwise.
+3. Phase 5 (notes) and the PWA phase are still planned; the ideas above are interleaved with them as the user prefers.
 
 ## Backlog (user requests, 2026-10-13)
 
-- **3D die matches the dice rolled (requested 2026-10-14, next to do)**: the 3D animation should show the die that was rolled (d4, d6, d8, d10, d12, d20, d100) instead of always a d20. With several kinds of dice in one roll, use the **first kind chosen** (the first dice term of the formula). Today `Die3D` + `d20geometry.ts` draw only an icosahedron: add the other solids (tetrahedron, cube, octahedron, pentagonal trapezohedron for d10/d100, dodecahedron), keep the total on the front face, and keep reduced motion and the natural-d20 face logic.
+- **3D die matches the dice rolled (requested 2026-10-14, DONE: see I3)**: the 3D animation should show the die that was rolled (d4, d6, d8, d10, d12, d20, d100) instead of always a d20. With several kinds of dice in one roll, use the **first kind chosen** (the first dice term of the formula). Today `Die3D` + `d20geometry.ts` draw only an icosahedron: add the other solids (tetrahedron, cube, octahedron, pentagonal trapezohedron for d10/d100, dodecahedron), keep the total on the front face, and keep reduced motion and the natural-d20 face logic.
 
 Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (done), 3) Phase 4 inventory (done), 4) maps (done).
 

@@ -1,5 +1,6 @@
 import { formulaToText, parseFormula, DICE_LIMITS } from '../dice/parser';
 import type { FormulaTerm } from '../dice/types';
+import { isHitDie, recoverHitDice } from './hitDice';
 import { asArray, asBool, asInt, asOneOf, asRecord, asString } from '../schema/sanitize';
 import {
   ABILITIES,
@@ -21,6 +22,10 @@ export interface ClassEntry {
   name: string;
   subclass: string;
   level: number;
+  /** 6, 8, 10 or 12; 0 means the SRD die for the class name (d8 if unknown). */
+  hitDie: number;
+  /** Hit dice spent since the last long rest. */
+  hitDiceUsed: number;
 }
 
 export interface SaveEntry {
@@ -112,7 +117,7 @@ export function defaultSheet(): Sheet {
     race: '',
     background: '',
     alignment: '',
-    classes: [{ name: '', subclass: '', level: 1 }],
+    classes: [{ name: '', subclass: '', level: 1, hitDie: 0, hitDiceUsed: 0 }],
     abilities: mapRecord(ABILITIES, () => 10),
     saves: mapRecord(ABILITIES, () => ({ proficient: false, bonus: 0 })),
     skills: mapRecord(SKILLS, (): SkillEntry => ({ prof: 0, bonus: 0 })),
@@ -142,7 +147,14 @@ const asBonus = (v: unknown) => asInt(v, -SHEET_LIMITS.bonus, SHEET_LIMITS.bonus
 
 function sanitizeClass(raw: unknown): ClassEntry {
   const c = asRecord(raw);
-  return { name: asString(c.name, 40), subclass: asString(c.subclass, 60), level: asInt(c.level, 1, LEVEL_MAX, 1) };
+  const hitDie = asInt(c.hitDie, 0, 20, 0);
+  return {
+    name: asString(c.name, 40),
+    subclass: asString(c.subclass, 60),
+    level: asInt(c.level, 1, LEVEL_MAX, 1),
+    hitDie: isHitDie(hitDie) ? hitDie : 0,
+    hitDiceUsed: asInt(c.hitDiceUsed, 0, LEVEL_MAX, 0),
+  };
 }
 
 /** Accepts only a parsable formula, stored in canonical form; anything else becomes empty. */
@@ -324,6 +336,8 @@ export interface RestResult {
   sheet: Sheet;
   /** Names of the features whose uses came back. */
   restored: string[];
+  /** Hit dice regained (long rest only). */
+  hitDice: number;
 }
 
 function restoreUses(s: Sheet, resets: readonly Reset[]): RestResult {
@@ -333,7 +347,7 @@ function restoreUses(s: Sheet, resets: readonly Reset[]): RestResult {
     restored.push(f.name);
     return { ...f, uses: { ...f.uses, cur: f.uses.max } };
   });
-  return { sheet: { ...s, features }, restored };
+  return { sheet: { ...s, features }, restored, hitDice: 0 };
 }
 
 export function shortRest(s: Sheet): RestResult {
@@ -343,5 +357,6 @@ export function shortRest(s: Sheet): RestResult {
 /** Restores every use and removes one level of exhaustion (SRD, assuming food and drink). */
 export function longRestSheet(s: Sheet): RestResult {
   const r = restoreUses(s, ['short', 'long']);
-  return { ...r, sheet: { ...r.sheet, exhaustion: Math.max(0, s.exhaustion - 1) } };
+  const dice = recoverHitDice(r.sheet);
+  return { ...r, hitDice: dice.recovered, sheet: { ...dice.sheet, exhaustion: Math.max(0, s.exhaustion - 1) } };
 }

@@ -21,7 +21,7 @@ describe('d20 geometry', () => {
       const r = faceToViewer(f);
       const n = apply(r, f.normal);
       expect(n[2]).toBeCloseTo(1);
-      const top = apply(r, VERTICES[f.v[0]]!);
+      const top = apply(r, VERTICES[f.v[0]!]!);
       expect(Math.abs(top[0])).toBeLessThan(1e-9); // straight above the centre
       expect(top[1]).toBeGreaterThan(0);
     }
