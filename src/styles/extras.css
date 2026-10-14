@@ -85,10 +85,6 @@
   }
 }
 
-html[data-motion='off'] .sparkles {
-  display: none;
-}
-
 /* --- Parchment grain on the cards, an ornament above the footer --- */
 
 .card {

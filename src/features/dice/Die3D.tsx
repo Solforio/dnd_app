@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { apply, axisAngle, dot, easeOutCubic, hash, multiply, normalize, type Mat3, type Vec3 } from './d20geometry';
-import { diceMotionOn, useDiceMotion } from '../../data/motionPref';
 import { faceToViewerOf, solidFor } from './solids';
 
 const DURATION_MS = 1100;
@@ -55,8 +54,7 @@ export function Die3D({ rollId, text, sides = 20, natural, className, label, onR
   const [anim, setAnim] = useState<{ id: string | undefined; t: number }>({ id: rollId, t: 1 });
   // The roll already on screen when the page opens does not tumble again.
   const [mountedWith] = useState(rollId);
-  const motion = useDiceMotion((s) => s.mode);
-  const animate = rollId !== undefined && rollId !== mountedWith && diceMotionOn(motion);
+  const animate = rollId !== undefined && rollId !== mountedWith;
   const progress = !animate ? 1 : anim.id === rollId ? anim.t : 0;
 
   useEffect(() => {

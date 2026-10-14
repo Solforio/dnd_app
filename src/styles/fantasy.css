@@ -5,7 +5,7 @@
  *  - one accent colour per section (body[data-section]): gold, crimson for combat, arcane violet for
  *    the grimoire, emerald for maps, azure for the party, bronze for the backpack;
  *  - a rune ring behind the die, rising cards, drifting embers, a parchment window for spells.
- * Every animation follows the Animazioni setting (default: the system's "reduce motion"; the user can force it on).
+ * Animations are always on (the owner asked for it: no switch, the system setting is ignored).
  */
 
 @font-face {
@@ -589,20 +589,4 @@ svg.die3d.crit {
 
 .spell-dialog input[type='checkbox'] {
   accent-color: #6b1f12;
-}
-
-/* --- Everything decorative that moves follows the Animazioni setting (html[data-motion]) --- */
-
-html[data-motion='off'] .app-header::before,
-html[data-motion='off'] h1,
-html[data-motion='off'] .die-stage::after,
-html[data-motion='off'] .vital-badge.live,
-html[data-motion='off'] .app-main > *,
-html[data-motion='off'] .app-main .column > * {
-  animation: none;
-}
-
-html[data-motion='off'] button,
-html[data-motion='off'] .hp-bar .cur {
-  transition: none;
 }

@@ -6,7 +6,6 @@ import { formatNumber } from '../../domain/format/number';
 import { MODE_LABEL } from './labels';
 import { RollBreakdown } from './RollBreakdown';
 import { Die3D } from './Die3D';
-import { DiceMotionControl } from './DiceMotionControl';
 
 /** The die drawn: the first kind of die in the formula, a d20 when the roll has none. */
 function shownSides(roll: RollRecord | undefined): number {
@@ -92,7 +91,6 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
       ) : (
         <p className="muted small">Cambia i dadi nel vassoio o scrivi una formula libera.</p>
       )}
-      <DiceMotionControl />
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">
         {announcement}
       </p>

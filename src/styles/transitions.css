@@ -1,8 +1,7 @@
 /*
  * Page transitions: when a tab is chosen the browser (View Transitions API, through the viewTransition
  * prop of the tab links) fades the old page out and slides the new one in. The header, the tabs and the
- * vital strip stay put. Browsers without the API just switch page, as before; the Animazioni setting
- * (html[data-motion]) turns it off.
+ * vital strip stay put. Browsers without the API just switch page, as before.
  */
 
 .app-header {
@@ -48,10 +47,4 @@
     opacity: 0;
     transform: translateY(14px);
   }
-}
-
-html[data-motion='off']::view-transition-group(*),
-html[data-motion='off']::view-transition-old(*),
-html[data-motion='off']::view-transition-new(*) {
-  animation: none;
 }

@@ -1,6 +1,5 @@
 import { useId, useState } from 'react';
 import { useCharacterStore } from '../../data/characterStore';
-import { diceMotionOn, useDiceMotion } from '../../data/motionPref';
 import { isDefaultTray, MAX_PER_DIE, TRAY_DICE, trayFormula, useTray } from '../../data/trayStore';
 import { DieIcon } from './DieIcon';
 import { SavePresetForm } from './SavePresetForm';
@@ -13,7 +12,6 @@ export function DiceTray() {
   const [saving, setSaving] = useState(false);
   // Counts the taps on each die; a new value restarts its small wobble.
   const [taps, setTaps] = useState<Record<number, number>>({});
-  const motion = useDiceMotion((s) => s.mode);
   const tap = (sides: number) => setTaps((t) => ({ ...t, [sides]: (t[sides] ?? 0) + 1 }));
   const modId = useId();
 
@@ -35,7 +33,7 @@ export function DiceTray() {
               disabled={counts[s] >= MAX_PER_DIE}
               aria-label={`Aggiungi un d${s}, ora ${counts[s]}`}
             >
-              <span key={taps[s] ?? 0} className={`die-face${(taps[s] ?? 0) > 0 && diceMotionOn(motion) ? ' tapped' : ''}`}>
+              <span key={taps[s] ?? 0} className={`die-face${(taps[s] ?? 0) > 0 ? ' tapped' : ''}`}>
                 <DieIcon sides={s} size={40} />
               </span>
               <span className="die-name">

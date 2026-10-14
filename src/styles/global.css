@@ -296,12 +296,6 @@ input[type='number'] {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .d20.rolling {
-    animation: none;
-  }
-}
-
 .result-line {
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -868,12 +862,6 @@ a {
   to {
     transform: scale(1);
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .strip-total.pop {
-    animation: none;
   }
 }
 
@@ -1848,11 +1836,6 @@ button.link {
   color: var(--gold);
   text-decoration: underline;
   cursor: pointer;
-}
-
-.motion-control select {
-  min-height: 32px;
-  padding-block: 0;
 }
 
 /* Grimoire */

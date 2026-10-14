@@ -3,7 +3,6 @@ import type { MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router';
 import { useCharacterStore } from '../data/characterStore';
-import { diceMotionOn } from '../data/motionPref';
 
 /** Small line icons, one per section, drawn on a 24-pixel grid in the text colour. */
 const ICONS: Record<string, ReactNode> = {
@@ -64,10 +63,10 @@ export function TabNav() {
   const inCombat = useCharacterStore((s) => s.character.sheet.combat.active);
   const navigate = useNavigate();
 
-  /** Changes page inside a view transition (a fade and slide) when the browser can and animations are on. */
+  /** Changes page inside a view transition (a fade and slide) when the browser can. */
   const go = (e: MouseEvent<HTMLAnchorElement>, to: string) => {
     const plain = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
-    if (!plain || !document.startViewTransition || !diceMotionOn()) return;
+    if (!plain || !document.startViewTransition) return;
     e.preventDefault();
     document.startViewTransition(() => {
       flushSync(() => navigate(to));
