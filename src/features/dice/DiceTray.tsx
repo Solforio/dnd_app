@@ -1,5 +1,7 @@
 import { useId, useState } from 'react';
 import { useCharacterStore } from '../../data/characterStore';
+import { diceMotionOn, useDiceMotion } from '../../data/motionPref';
+import { DieIcon } from './DieIcon';
 import { SavePresetForm } from './SavePresetForm';
 
 const DICE = [4, 6, 8, 10, 12, 20, 100] as const;
@@ -21,6 +23,10 @@ export function DiceTray() {
   const [{ counts, order }, setPick] = useState<{ counts: Counts; order: number[] }>({ counts: EMPTY, order: [] });
   const [modifier, setModifier] = useState(0);
   const [saving, setSaving] = useState(false);
+  // Counts the taps on each die; a new value restarts its small wobble.
+  const [taps, setTaps] = useState<Record<number, number>>({});
+  const motion = useDiceMotion((s) => s.mode);
+  const tap = (sides: number) => setTaps((t) => ({ ...t, [sides]: (t[sides] ?? 0) + 1 }));
   const modId = useId();
 
   const formula = buildFormula(counts, order, modifier);
@@ -40,17 +46,28 @@ export function DiceTray() {
             <button
               type="button"
               className="add"
-              onClick={() => change(s, 1)}
+              onClick={() => {
+                change(s, 1);
+                tap(s);
+              }}
               disabled={counts[s] >= MAX_PER_DIE}
               aria-label={`Aggiungi un d${s}, ora ${counts[s]}`}
             >
-              d{s}
-              {counts[s] > 0 && <span className="count">×{counts[s]}</span>}
+              <span key={taps[s] ?? 0} className={`die-face${(taps[s] ?? 0) > 0 && diceMotionOn(motion) ? ' tapped' : ''}`}>
+                <DieIcon sides={s} size={40} />
+              </span>
+              <span className="die-name">
+                d{s}
+                {counts[s] > 0 && <span className="count">×{counts[s]}</span>}
+              </span>
             </button>
             <button
               type="button"
               className="remove"
-              onClick={() => change(s, -1)}
+              onClick={() => {
+                change(s, -1);
+                tap(s);
+              }}
               disabled={counts[s] === 0}
               aria-label={`Togli un d${s}`}
             >

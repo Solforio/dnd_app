@@ -1836,3 +1836,71 @@ textarea {
 .pip.on {
   background: var(--gold);
 }
+
+/* Dice icons in the tray */
+.tray-die .add {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-1);
+  min-height: 72px;
+  color: var(--text);
+}
+
+.tray-die .add:active:not(:disabled) {
+  background: var(--surface2);
+}
+
+.tray-die .add .die-icon {
+  color: var(--muted);
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  transition: color 0.15s;
+}
+
+.tray-die .add:hover .die-icon,
+.tray-die .add:focus-visible .die-icon {
+  color: var(--text);
+}
+
+.tray-die .die-face {
+  display: block;
+  line-height: 0;
+}
+
+.tray-die .die-face.tapped {
+  animation: die-tap 0.3s ease-out;
+}
+
+.tray-die .die-name {
+  line-height: 1.1;
+}
+
+@keyframes die-tap {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  40% {
+    transform: scale(1.22) rotate(-14deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+button.link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.motion-control select {
+  min-height: 32px;
+  padding-block: 0;
+}

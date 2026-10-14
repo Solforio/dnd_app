@@ -40,12 +40,12 @@ function Pips({ label, max, left, onSpend, onRecover }: { label: string; max: nu
  * slots are spent in play, a long rest restores them all, a short rest the
  * warlock's pact slots.
  */
-export function SpellSlotsCard({ editing }: { editing: boolean }) {
+export function SpellSlotsCard({ editing, alwaysShow = false }: { editing: boolean; alwaysShow?: boolean }) {
   const s = useSheet();
   const rows = slotRows(s);
   const pact = pactLeft(s);
   const manual = s.spellcasting.manualMax !== null;
-  if (rows.length === 0 && !pact && !editing) return null;
+  if (rows.length === 0 && !pact && !editing && !alwaysShow) return null;
 
   return (
     <section className="card stack" aria-labelledby="slots-title">

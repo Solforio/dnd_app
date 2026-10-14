@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apply, axisAngle, dot, easeOutCubic, hash, multiply, normalize, type Mat3, type Vec3 } from './d20geometry';
+import { diceMotionOn, useDiceMotion } from '../../data/motionPref';
 import { faceToViewerOf, solidFor } from './solids';
 
 const DURATION_MS = 1100;
@@ -26,10 +27,6 @@ function fontSize(text: string): number {
   return 17;
 }
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 interface Props {
   /** Changes on every roll and restarts the animation; undefined before the first roll. */
   rollId: string | undefined;
@@ -54,7 +51,8 @@ export function Die3D({ rollId, text, sides = 20, natural, className, label }: P
   const [anim, setAnim] = useState<{ id: string | undefined; t: number }>({ id: rollId, t: 1 });
   // The roll already on screen when the page opens does not tumble again.
   const [mountedWith] = useState(rollId);
-  const animate = rollId !== undefined && rollId !== mountedWith && !prefersReducedMotion();
+  const motion = useDiceMotion((s) => s.mode);
+  const animate = rollId !== undefined && rollId !== mountedWith && diceMotionOn(motion);
   const progress = !animate ? 1 : anim.id === rollId ? anim.t : 0;
 
   useEffect(() => {

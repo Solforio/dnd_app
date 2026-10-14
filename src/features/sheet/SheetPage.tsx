@@ -9,7 +9,6 @@ import { HitDiceCard } from './HitDiceCard';
 import { IdentityCard } from './IdentityCard';
 import { RollStrip } from './RollStrip';
 import { SkillsCard } from './SkillsCard';
-import { SpellSlotsCard } from './SpellSlotsCard';
 import { TraitsCard } from './TraitsCard';
 
 /**
@@ -33,7 +32,6 @@ export function SheetPage() {
       <div className="column">
         <AttacksCard editing={editing} />
         <ConditionsCard />
-        <SpellSlotsCard editing={editing} />
         <FeaturesCard editing={editing} />
         <TraitsCard editing={editing} />
         <HitDiceCard />
