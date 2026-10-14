@@ -34,6 +34,25 @@ export function systemReducesMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/**
+ * Puts the effective choice on <html data-motion="on|off">, so the style sheet can switch every decorative
+ * animation (embers, rune ring, rising cards, shimmer) with the same setting as the dice.
+ * Returns a function that stops listening.
+ */
+export function syncMotionAttribute(): () => void {
+  const apply = () => {
+    document.documentElement.dataset.motion = diceMotionOn() ? 'on' : 'off';
+  };
+  apply();
+  const unsubscribe = useDiceMotion.subscribe(apply);
+  const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+  media.addEventListener('change', apply);
+  return () => {
+    unsubscribe();
+    media.removeEventListener('change', apply);
+  };
+}
+
 /** True when the dice should tumble and wobble. */
 export function diceMotionOn(mode: DiceMotion = useDiceMotion.getState().mode): boolean {
   return mode === 'on' || (mode === 'auto' && !systemReducesMotion());

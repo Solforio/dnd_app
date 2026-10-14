@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
-import { Route, Routes } from 'react-router';
+import { useEffect, type ReactNode } from 'react';
+import { Route, Routes, useLocation } from 'react-router';
 import { TabNav } from './components/TabNav';
 import { useCharacterStore } from './data/characterStore';
+import { syncMotionAttribute } from './data/motionPref';
 import { useSession } from './data/session';
 import { AccountBar } from './features/account/AccountBar';
 import { SignInPage } from './features/account/SignInPage';
@@ -68,7 +69,26 @@ function WithTabs({ children }: { children: ReactNode }) {
   );
 }
 
+const SECTIONS: [string, string][] = [
+  ['/scheda', 'scheda'],
+  ['/combattimento', 'combattimento'],
+  ['/zaino', 'zaino'],
+  ['/grimorio', 'grimorio'],
+  ['/mappe', 'mappe'],
+  ['/gruppo', 'gruppo'],
+];
+
+/** Writes the open section on the body, so each page can have its own accent colour. */
+function useSectionTheme() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    document.body.dataset.section = SECTIONS.find(([prefix]) => pathname.startsWith(prefix))?.[1] ?? 'tiri';
+  }, [pathname]);
+}
+
 export function App() {
+  useSectionTheme();
+  useEffect(() => syncMotionAttribute(), []);
   const phase = useSession((s) => s.phase);
   const warning = useSession((s) => s.warning);
   const writeError = useSession((s) => s.writeError);

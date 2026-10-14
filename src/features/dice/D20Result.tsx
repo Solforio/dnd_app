@@ -35,16 +35,18 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
 
   return (
     <div className="result">
-      <Die3D
-        rollId={roll?.id}
-        text={text}
-        sides={sides}
-        natural={roll ? naturalRoll(roll, sides) : undefined}
-        className={state}
-        label={roll ? `Risultato ${text}` : 'Nessun tiro ancora'}
-        onRoll={chosen ? () => rollChosen(chosen) : undefined}
-        rollLabel={`Lancia ${chosen}`}
-      />
+      <div className="die-stage">
+        <Die3D
+          rollId={roll?.id}
+          text={text}
+          sides={sides}
+          natural={roll ? naturalRoll(roll, sides) : undefined}
+          className={state}
+          label={roll ? `Risultato ${text}` : 'Nessun tiro ancora'}
+          onRoll={chosen ? () => rollChosen(chosen) : undefined}
+          rollLabel={`Lancia ${chosen}`}
+        />
+      </div>
       <p className="small muted die-hint">
         {chosen ? (
           <>

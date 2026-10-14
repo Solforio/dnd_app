@@ -1,8 +1,80 @@
 /*
- * Fantasy skin, loaded after global.css. Colours and radii come from tokens.css; this file only adds
- * the look: night-sky background, framed cards with gold corners, small-caps titles with a rule,
- * bevelled buttons, a gem-like HP bar. No images and no web fonts, so it works offline.
+ * Fantasy skin, loaded after global.css. Colours come from tokens.css; here is the character:
+ *  - Cinzel (titles, numbers) and Cinzel Decorative (logo), SIL OFL, bundled with the app;
+ *  - leaf-shaped corners (two sharp, two round) on cards, buttons and fields;
+ *  - one accent colour per section (body[data-section]): gold, crimson for combat, arcane violet for
+ *    the grimoire, emerald for maps, azure for the party, bronze for the backpack;
+ *  - a rune ring behind the die, rising cards, drifting embers, a parchment window for spells.
+ * Every animation follows the Animazioni setting (default: the system's "reduce motion"; the user can force it on).
  */
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('../assets/fonts/Cinzel-Variable.ttf') format('truetype');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cinzel Decorative';
+  src: url('../assets/fonts/CinzelDecorative-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --font-display: 'Cinzel', var(--font-serif);
+  --font-title: 'Cinzel Decorative', 'Cinzel', var(--font-serif);
+  --accent: var(--gold);
+  --accent-bright: var(--gold-bright);
+  --accent-deep: var(--gold-deep);
+  --accent-rgb: 224 176 74;
+  --glow: rgb(var(--accent-rgb) / 0.3);
+  /* Two sharp corners and two round ones, like a leaf. */
+  --leaf: 5px 22px 5px 22px;
+  --leaf-sm: 4px 12px 4px 12px;
+  --tint: rgb(98 64 150 / 0.38);
+}
+
+body[data-section='combattimento'] {
+  --accent: #dd5f4d;
+  --accent-bright: #f58f7c;
+  --accent-deep: #a8362a;
+  --accent-rgb: 221 95 77;
+  --tint: rgb(150 40 40 / 0.4);
+}
+
+body[data-section='grimorio'] {
+  --accent: #9a86ff;
+  --accent-bright: #c2b6ff;
+  --accent-deep: #6a54d6;
+  --accent-rgb: 154 134 255;
+  --tint: rgb(80 60 190 / 0.45);
+}
+
+body[data-section='mappe'] {
+  --accent: #5cc4a0;
+  --accent-bright: #98e3c7;
+  --accent-deep: #2f8e6f;
+  --accent-rgb: 92 196 160;
+  --tint: rgb(30 120 100 / 0.38);
+}
+
+body[data-section='gruppo'] {
+  --accent: #5aaae8;
+  --accent-bright: #98ceff;
+  --accent-deep: #2f78b8;
+  --accent-rgb: 90 170 232;
+  --tint: rgb(40 90 170 / 0.4);
+}
+
+body[data-section='zaino'] {
+  --accent: #d28f4a;
+  --accent-bright: #f0b87a;
+  --accent-deep: #9a6226;
+  --accent-rgb: 210 143 74;
+  --tint: rgb(140 80 30 / 0.34);
+}
 
 html {
   scrollbar-color: var(--line) transparent;
@@ -10,22 +82,24 @@ html {
 
 body {
   background:
-    radial-gradient(1100px 520px at 50% -8%, rgb(98 64 150 / 0.38), transparent 62%),
+    radial-gradient(1100px 520px at 50% -8%, var(--tint), transparent 62%),
     radial-gradient(700px 480px at 100% 100%, rgb(120 70 40 / 0.16), transparent 70%),
     var(--bg);
   background-attachment: fixed;
+  transition: background-color 0.4s;
 }
 
 ::selection {
-  background: var(--gold);
+  background: var(--accent);
   color: #1b1a2e;
 }
 
-/* --- Header and tabs --- */
+/* --- Header: the logo shimmers, embers drift up --- */
 
 .app-header {
   position: relative;
-  background: linear-gradient(180deg, rgb(224 176 74 / 0.09), transparent);
+  overflow: hidden;
+  background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.1), transparent);
   border-bottom-color: transparent;
 }
 
@@ -34,21 +108,69 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -1px;
+  bottom: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent) 20%, var(--accent) 80%, transparent);
   opacity: 0.7;
+}
+
+.app-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 6% 90%, var(--accent-bright), transparent),
+    radial-gradient(2px 2px at 17% 70%, var(--accent), transparent),
+    radial-gradient(1.5px 1.5px at 29% 95%, var(--accent-bright), transparent),
+    radial-gradient(2px 2px at 41% 60%, var(--accent), transparent),
+    radial-gradient(1.5px 1.5px at 56% 85%, var(--accent-bright), transparent),
+    radial-gradient(2px 2px at 68% 75%, var(--accent), transparent),
+    radial-gradient(1.5px 1.5px at 81% 92%, var(--accent-bright), transparent),
+    radial-gradient(2px 2px at 93% 65%, var(--accent), transparent);
+  background-size: 100% 220%;
+  opacity: 0.55;
+  pointer-events: none;
+  animation: embers 14s linear infinite;
+}
+
+.app-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes embers {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 -100%;
+  }
 }
 
 h1 {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 1.5rem;
-  font-variant: small-caps;
-  letter-spacing: 0.08em;
-  color: var(--gold-bright);
-  text-shadow: 0 0 14px var(--glow-gold);
+  font-family: var(--font-title);
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: linear-gradient(100deg, var(--gold-deep) 0%, var(--gold-bright) 38%, #fff3c9 50%, var(--gold-bright) 62%, var(--gold-deep) 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgb(224 176 74 / 0.35));
+  animation: shimmer 9s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -130% 0;
+  }
 }
 
 .brand-die {
@@ -58,41 +180,74 @@ h1 {
   stroke: currentColor;
   stroke-width: 1.2;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px var(--glow-gold));
+  filter: drop-shadow(0 0 6px rgb(224 176 74 / 0.45));
 }
 
+/* --- Tabs with icons --- */
+
 .tab {
-  font-family: var(--font-serif);
-  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.tab-icon {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .tab.active {
-  text-shadow: 0 0 10px var(--glow-gold);
-  box-shadow: 0 2px 8px -3px var(--gold);
+  color: var(--accent-bright);
+  border-bottom-color: var(--accent);
+  text-shadow: 0 0 12px var(--glow);
+  box-shadow: 0 3px 10px -4px var(--accent);
 }
 
-/* --- Cards: a framed panel with gold corners --- */
+.tab.active .tab-icon {
+  filter: drop-shadow(0 0 4px var(--glow));
+}
+
+@media (max-width: 700px) {
+  .tab {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 10px;
+    font-size: 0.68rem;
+  }
+}
+
+/* --- Cards: a framed panel, leaf corners, accent brackets --- */
 
 .card {
   position: relative;
+  border-radius: var(--leaf);
   background:
     linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 45%),
     var(--surface);
   border-color: var(--line);
   box-shadow:
-    0 3px 10px rgb(0 0 0 / 0.35),
+    0 4px 14px rgb(0 0 0 / 0.38),
     inset 0 0 0 3px var(--surface),
-    inset 0 0 0 4px rgb(224 176 74 / 0.13);
+    inset 0 0 0 4px rgb(var(--accent-rgb) / 0.14);
 }
 
 .card::before,
 .card::after {
   content: '';
   position: absolute;
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--gold);
-  opacity: 0.75;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--accent);
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -101,7 +256,7 @@ h1 {
   left: -1px;
   border-right: 0;
   border-bottom: 0;
-  border-top-left-radius: var(--radius);
+  border-top-left-radius: 5px;
 }
 
 .card::after {
@@ -109,40 +264,42 @@ h1 {
   bottom: -1px;
   border-left: 0;
   border-top: 0;
-  border-bottom-right-radius: var(--radius);
+  border-bottom-right-radius: 5px;
 }
 
-/* Card titles: small caps, a gold diamond and a rule that fades out. */
+/* Card titles: Cinzel, a diamond, and a rule that fades out. */
 .card h2 {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   padding-bottom: 6px;
-  font-variant: small-caps;
-  letter-spacing: 0.05em;
-  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  color: var(--accent-bright);
   border-bottom: 1px solid transparent;
-  border-image: linear-gradient(90deg, rgb(224 176 74 / 0.55), transparent 85%) 1;
+  border-image: linear-gradient(90deg, rgb(var(--accent-rgb) / 0.6), transparent 85%) 1;
 }
 
 .card h2::before {
   content: '';
   flex: none;
   align-self: center;
-  width: 7px;
-  height: 7px;
-  background: var(--gold);
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
   transform: rotate(45deg);
-  box-shadow: 0 0 6px var(--glow-gold);
+  box-shadow: 0 0 8px var(--glow);
 }
 
 .card h3 {
-  color: var(--gold);
-  font-variant: small-caps;
-  letter-spacing: 0.04em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--accent);
 }
 
-/* The folding title is a button inside the h2: it keeps the h2 look. */
 .fold-head button {
   color: inherit;
   background: none;
@@ -153,31 +310,49 @@ h1 {
   box-shadow: none;
 }
 
+/* Numbers that matter are set in the display face. */
+.vital-numbers,
+.hp-numbers,
+.stat-value,
+.check-total,
+.strip-total,
+.ability .stat-value {
+  font-family: var(--font-display);
+}
+
 /* --- Buttons and fields --- */
 
 button {
-  background: linear-gradient(180deg, var(--surface2), rgb(0 0 0 / 0.18)), var(--surface2);
+  border-radius: var(--leaf-sm);
+  background: linear-gradient(180deg, var(--surface2), rgb(0 0 0 / 0.2)), var(--surface2);
   border-color: var(--line);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
   transition:
     border-color 0.15s,
-    box-shadow 0.15s;
+    box-shadow 0.15s,
+    transform 0.1s;
 }
 
 button:hover:not(:disabled) {
-  border-color: var(--gold);
+  border-color: var(--accent);
   box-shadow:
-    0 0 10px var(--glow-gold),
+    0 0 12px var(--glow),
     inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 button.primary {
-  background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep));
-  border-color: var(--gold-bright);
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent-deep));
+  border-color: var(--accent-bright);
   color: #1b1a2e;
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
   text-shadow: 0 1px 0 rgb(255 255 255 / 0.35);
   box-shadow:
-    0 0 14px var(--glow-gold),
+    0 0 16px var(--glow),
     inset 0 1px 0 rgb(255 255 255 / 0.45);
 }
 
@@ -194,16 +369,99 @@ button.ghost:hover:not(:disabled) {
 
 input,
 select {
-  background: rgb(0 0 0 / 0.28);
+  border-radius: var(--leaf-sm);
+  background: rgb(0 0 0 / 0.3);
   border-color: var(--line);
 }
 
 input:focus,
 select:focus {
-  border-color: var(--gold);
+  border-color: var(--accent);
 }
 
-/* --- HP, dice and tags --- */
+/* --- Cards rise when a page opens --- */
+
+.app-main > *,
+.app-main .column > * {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.app-main .column > :nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.app-main .column > :nth-child(3) {
+  animation-delay: 0.14s;
+}
+
+.app-main .column > :nth-child(n + 4) {
+  animation-delay: 0.2s;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- The die on a rune ring --- */
+
+.die-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: var(--space-3) 0;
+  isolation: isolate;
+}
+
+.die-stage::before,
+.die-stage::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: min(300px, 92%);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* The halo behind the die. */
+.die-stage::before {
+  background: radial-gradient(circle, rgb(var(--accent-rgb) / 0.22), transparent 66%);
+}
+
+/* The ring of tick marks, turning slowly. */
+.die-stage::after {
+  background: repeating-conic-gradient(from 0deg, rgb(var(--accent-rgb) / 0.75) 0 1.1deg, transparent 1.1deg 10deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 69%, #000 70% 73%, transparent 74%);
+  mask: radial-gradient(circle, transparent 0 69%, #000 70% 73%, transparent 74%);
+  animation: turn 90s linear infinite;
+}
+
+@keyframes turn {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.die-button {
+  filter: drop-shadow(0 0 14px rgb(var(--accent-rgb) / 0.25));
+}
+
+svg.die3d.crit {
+  filter: drop-shadow(0 0 18px rgb(224 176 74 / 0.75));
+}
+
+/* --- Bars, tags, strip --- */
 
 .hp-bar {
   border-color: var(--line);
@@ -214,6 +472,7 @@ select:focus {
 .hp-bar .cur {
   background: linear-gradient(180deg, #9be3bb, #3f9c70);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4);
+  transition: width 0.4s ease-out;
 }
 
 .hp-bar .cur.low {
@@ -224,51 +483,126 @@ select:focus {
   background: linear-gradient(180deg, #cdbfa0, #8c7e63);
 }
 
-.die-button {
-  filter: drop-shadow(0 0 14px rgb(224 176 74 / 0.22));
-}
-
-svg.die3d.crit {
-  filter: drop-shadow(0 0 16px rgb(224 176 74 / 0.7));
-}
-
 .result-tag {
   border-radius: 999px;
 }
 
 .vital-strip {
   background:
-    linear-gradient(180deg, rgb(224 176 74 / 0.06), transparent),
+    linear-gradient(180deg, rgb(var(--accent-rgb) / 0.07), transparent),
     var(--bg);
-  border-bottom-color: rgb(224 176 74 / 0.35);
+  border-bottom-color: rgb(var(--accent-rgb) / 0.4);
 }
 
 .vital-numbers {
-  color: var(--gold-bright);
+  color: var(--accent-bright);
 }
 
-/* --- Dialogs and notices share the card frame --- */
-
-.spell-dialog {
-  border-color: var(--gold-deep);
-  box-shadow:
-    0 12px 40px rgb(0 0 0 / 0.6),
-    inset 0 0 0 3px var(--surface),
-    inset 0 0 0 4px rgb(224 176 74 / 0.18);
+.vital-name {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
 }
 
-.spell-dialog h2 {
-  color: var(--gold-bright);
-  font-variant: small-caps;
-  letter-spacing: 0.05em;
+.vital-badge.live {
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 12px rgb(221 95 77 / 0.6);
+  }
+}
+
+.tab-live {
+  box-shadow: 0 0 8px rgb(221 95 77 / 0.9);
+}
+
+.slot-pip.on {
+  background: radial-gradient(circle at 35% 30%, #fff, var(--accent) 45%, var(--accent-deep));
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.slot-pip {
+  border-color: var(--accent);
 }
 
 .spell-notice {
-  border-color: var(--gold-deep);
+  border-color: var(--accent-deep);
+  border-radius: var(--leaf);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  button {
-    transition: none;
-  }
+/* --- The spell window is a parchment --- */
+
+.spell-dialog {
+  border: 0;
+  border-radius: var(--leaf);
+  color: #2f2112;
+  background:
+    radial-gradient(130% 90% at 15% 0%, rgb(255 246 214 / 0.9), transparent 60%),
+    radial-gradient(90% 70% at 100% 100%, rgb(150 100 40 / 0.35), transparent 70%),
+    #e6d4a8;
+  box-shadow:
+    inset 0 0 70px rgb(110 70 20 / 0.5),
+    0 20px 60px rgb(0 0 0 / 0.7);
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+}
+
+.spell-dialog h2 {
+  padding: 0;
+  font-family: var(--font-title);
+  font-size: 1.45rem;
+  color: #6b1f12;
+  border: 0;
+}
+
+.spell-dialog h2::before {
+  display: none;
+}
+
+.spell-dialog .muted,
+.spell-dialog dt,
+.spell-dialog .small.muted {
+  color: #6e5733;
+}
+
+.spell-dialog .spell-facts {
+  padding: var(--space-2) 0;
+  border-block: 1px solid rgb(107 31 18 / 0.35);
+}
+
+.spell-dialog .spell-facts dd {
+  font-weight: 600;
+}
+
+.spell-dialog button {
+  background: linear-gradient(180deg, #8a3524, #5f1e12);
+  border-color: #3b1109;
+  color: #f6e8c2;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.spell-dialog button:hover:not(:disabled) {
+  border-color: #c9962e;
+  box-shadow: 0 0 10px rgb(201 150 46 / 0.5);
+}
+
+.spell-dialog input[type='checkbox'] {
+  accent-color: #6b1f12;
+}
+
+/* --- Everything decorative that moves follows the Animazioni setting (html[data-motion]) --- */
+
+html[data-motion='off'] .app-header::before,
+html[data-motion='off'] h1,
+html[data-motion='off'] .die-stage::after,
+html[data-motion='off'] .vital-badge.live,
+html[data-motion='off'] .app-main > *,
+html[data-motion='off'] .app-main .column > * {
+  animation: none;
+}
+
+html[data-motion='off'] button,
+html[data-motion='off'] .hp-bar .cur {
+  transition: none;
 }

@@ -14,7 +14,7 @@ export function DiceMotionControl() {
     <div className="stack-tight motion-control">
       <div className="row">
         <label htmlFor={id} className="small muted">
-          Animazione dei dadi
+          Animazioni
         </label>
         <select id={id} value={mode} onChange={(e) => set(e.target.value as DiceMotion)}>
           {(Object.keys(LABEL) as DiceMotion[]).map((m) => (
@@ -26,9 +26,9 @@ export function DiceMotionControl() {
       </div>
       {blocked && (
         <p className="small" role="status">
-          Il tuo dispositivo ha le animazioni ridotte, per questo il dado non si muove.{' '}
+          Il tuo dispositivo ha le animazioni ridotte, per questo il dado e gli effetti dell’app non si muovono.{' '}
           <button type="button" className="link" onClick={() => set('on')}>
-            Attiva l’animazione
+            Attiva le animazioni
           </button>
         </p>
       )}
