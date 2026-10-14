@@ -5,6 +5,7 @@ import { App } from './App';
 import { startSession } from './data/session';
 import './styles/tokens.css';
 import './styles/global.css';
+import './styles/fantasy.css';
 
 startSession();
 

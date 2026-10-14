@@ -1,20 +1,24 @@
 :root {
-  --bg: #1b1a2e;
-  --surface: #26243d;
-  --surface2: #312e50;
-  --line: #443f6b;
-  --text: #ece8f5;
-  --muted: #a29dc0;
-  --gold: #e3b341;
-  --red: #e8705f;
-  --green: #62c196;
+  /* Dark fantasy: midnight indigo, aged violet, bronze lines, burnished gold, parchment text. */
+  --bg: #15121f;
+  --surface: #211c31;
+  --surface2: #2e2744;
+  --line: #5e4d3c;
+  --text: #f1e8d4;
+  --muted: #b9ad96;
+  --gold: #e0b04a;
+  --gold-bright: #f3cf78;
+  --gold-deep: #b68a2c;
+  --red: #e5775f;
+  --green: #74c69d;
+  --glow-gold: rgb(224 176 74 / 0.3);
 
-  --font-serif: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --font-serif: 'Palatino Linotype', Palatino, 'Book Antiqua', 'URW Palladio L', Georgia, serif;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
 
-  --radius: 10px;
-  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-sm: 8px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

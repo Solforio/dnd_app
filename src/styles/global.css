@@ -1321,56 +1321,6 @@ textarea {
   }
 }
 
-/* --- Quick HP (phones, Tiri page) --- */
-
-.hp-quick {
-  display: none;
-}
-
-@media (max-width: 859px) {
-  .hp-quick {
-    display: grid;
-    gap: var(--space-2);
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    padding: var(--space-2) var(--space-3);
-    background: var(--surface);
-    border: 1px solid var(--surface2);
-    border-radius: var(--radius);
-  }
-}
-
-.hp-quick-top {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.hp-quick-numbers {
-  font-family: var(--font-serif);
-  font-size: 1.3rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.hp-quick-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 4.5em) 1fr 1fr auto;
-  gap: var(--space-2);
-}
-
-.hp-quick-actions input {
-  width: 100%;
-}
-
-.hp-quick-status {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* --- 3D die --- */
 
 .die3d .face {
@@ -2142,4 +2092,137 @@ button.link {
 
 .fold > [hidden] {
   display: none;
+}
+
+/* Vital strip, under the tabs on every page */
+.vital-strip {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  gap: var(--space-2);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.vital-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.vital-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.vital-name {
+  display: block;
+  font-family: var(--font-serif);
+  line-height: 1.1;
+}
+
+.vital-class {
+  display: block;
+  line-height: 1.1;
+}
+
+.vital-hp {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 180px;
+  min-width: 150px;
+}
+
+.vital-numbers {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.vital-quick {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.vital-quick input {
+  width: 4.2em;
+}
+
+.vital-badges {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vital-badge {
+  padding: 2px var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.vital-badge.live {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.vital-status {
+  min-height: 0;
+  margin: 0;
+}
+
+.vital-status:empty {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .vital-who {
+    flex: 1 1 100%;
+  }
+  .vital-quick {
+    flex: 1 1 auto;
+  }
+  .vital-quick input {
+    flex: 1;
+  }
+}
+
+/* Saved rolls as chips */
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.preset-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.preset-chip .roll-preset {
+  border: 0;
+  border-radius: 0;
+  min-height: 36px;
+}
+
+.preset-chip .ghost {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  border-radius: 0;
 }

@@ -3,7 +3,6 @@ import { ensureSpellCatalogue } from '../../data/spellCatalogue';
 import { AttacksCard } from '../sheet/AttacksCard';
 import { ConditionsCard } from '../sheet/ConditionsCard';
 import { RollStrip } from '../sheet/RollStrip';
-import { CombatHp } from './CombatHp';
 import { CombatSpells } from './CombatSpells';
 import { EffectsCard } from './EffectsCard';
 import { KeyStats } from './KeyStats';
@@ -22,7 +21,6 @@ export function CombatPage() {
       <TurnCard />
       <KeyStats />
       <div className="column">
-        <CombatHp />
         <ConditionsCard />
         <EffectsCard />
       </div>

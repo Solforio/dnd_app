@@ -30,10 +30,10 @@ function shapeOf(solid: Solid): Shape {
 }
 
 /** The outline of a die (d100 is drawn as a d10), tinted with the surrounding text colour. Decorative. */
-export function DieIcon({ sides, size = 40 }: { sides: number; size?: number }) {
+export function DieIcon({ sides, size = 40, className = 'die-icon' }: { sides: number; size?: number; className?: string }) {
   const shape = shapeOf(solidFor(sides));
   return (
-    <svg className="die-icon" viewBox="0 0 48 48" width={size} height={size} aria-hidden="true" focusable="false">
+    <svg className={className} viewBox="0 0 48 48" width={size} height={size} aria-hidden="true" focusable="false">
       {shape.polys.map((p, i) => (
         <polygon key={i} points={p.points} fillOpacity={0.12 + 0.5 * p.light} />
       ))}

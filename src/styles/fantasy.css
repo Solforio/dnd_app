@@ -1,0 +1,274 @@
+/*
+ * Fantasy skin, loaded after global.css. Colours and radii come from tokens.css; this file only adds
+ * the look: night-sky background, framed cards with gold corners, small-caps titles with a rule,
+ * bevelled buttons, a gem-like HP bar. No images and no web fonts, so it works offline.
+ */
+
+html {
+  scrollbar-color: var(--line) transparent;
+}
+
+body {
+  background:
+    radial-gradient(1100px 520px at 50% -8%, rgb(98 64 150 / 0.38), transparent 62%),
+    radial-gradient(700px 480px at 100% 100%, rgb(120 70 40 / 0.16), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--gold);
+  color: #1b1a2e;
+}
+
+/* --- Header and tabs --- */
+
+.app-header {
+  position: relative;
+  background: linear-gradient(180deg, rgb(224 176 74 / 0.09), transparent);
+  border-bottom-color: transparent;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent);
+  opacity: 0.7;
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1.5rem;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+  text-shadow: 0 0 14px var(--glow-gold);
+}
+
+.brand-die {
+  flex: none;
+  color: var(--gold);
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px var(--glow-gold));
+}
+
+.tab {
+  font-family: var(--font-serif);
+  letter-spacing: 0.04em;
+}
+
+.tab.active {
+  text-shadow: 0 0 10px var(--glow-gold);
+  box-shadow: 0 2px 8px -3px var(--gold);
+}
+
+/* --- Cards: a framed panel with gold corners --- */
+
+.card {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 45%),
+    var(--surface);
+  border-color: var(--line);
+  box-shadow:
+    0 3px 10px rgb(0 0 0 / 0.35),
+    inset 0 0 0 3px var(--surface),
+    inset 0 0 0 4px rgb(224 176 74 / 0.13);
+}
+
+.card::before,
+.card::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gold);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.card::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: var(--radius);
+}
+
+.card::after {
+  right: -1px;
+  bottom: -1px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: var(--radius);
+}
+
+/* Card titles: small caps, a gold diamond and a rule that fades out. */
+.card h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding-bottom: 6px;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--gold-bright);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, rgb(224 176 74 / 0.55), transparent 85%) 1;
+}
+
+.card h2::before {
+  content: '';
+  flex: none;
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  background: var(--gold);
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px var(--glow-gold);
+}
+
+.card h3 {
+  color: var(--gold);
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+
+/* The folding title is a button inside the h2: it keeps the h2 look. */
+.fold-head button {
+  color: inherit;
+  background: none;
+  box-shadow: none;
+}
+
+.fold-head button:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+/* --- Buttons and fields --- */
+
+button {
+  background: linear-gradient(180deg, var(--surface2), rgb(0 0 0 / 0.18)), var(--surface2);
+  border-color: var(--line);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--gold);
+  box-shadow:
+    0 0 10px var(--glow-gold),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+button.primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep));
+  border-color: var(--gold-bright);
+  color: #1b1a2e;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.35);
+  box-shadow:
+    0 0 14px var(--glow-gold),
+    inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+button.ghost,
+button.link {
+  background: none;
+  box-shadow: none;
+}
+
+button.ghost:hover:not(:disabled) {
+  box-shadow: none;
+  color: var(--text);
+}
+
+input,
+select {
+  background: rgb(0 0 0 / 0.28);
+  border-color: var(--line);
+}
+
+input:focus,
+select:focus {
+  border-color: var(--gold);
+}
+
+/* --- HP, dice and tags --- */
+
+.hp-bar {
+  border-color: var(--line);
+  background: rgb(0 0 0 / 0.45);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.55);
+}
+
+.hp-bar .cur {
+  background: linear-gradient(180deg, #9be3bb, #3f9c70);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4);
+}
+
+.hp-bar .cur.low {
+  background: linear-gradient(180deg, #f0927e, #b8412e);
+}
+
+.hp-bar .temp {
+  background: linear-gradient(180deg, #cdbfa0, #8c7e63);
+}
+
+.die-button {
+  filter: drop-shadow(0 0 14px rgb(224 176 74 / 0.22));
+}
+
+svg.die3d.crit {
+  filter: drop-shadow(0 0 16px rgb(224 176 74 / 0.7));
+}
+
+.result-tag {
+  border-radius: 999px;
+}
+
+.vital-strip {
+  background:
+    linear-gradient(180deg, rgb(224 176 74 / 0.06), transparent),
+    var(--bg);
+  border-bottom-color: rgb(224 176 74 / 0.35);
+}
+
+.vital-numbers {
+  color: var(--gold-bright);
+}
+
+/* --- Dialogs and notices share the card frame --- */
+
+.spell-dialog {
+  border-color: var(--gold-deep);
+  box-shadow:
+    0 12px 40px rgb(0 0 0 / 0.6),
+    inset 0 0 0 3px var(--surface),
+    inset 0 0 0 4px rgb(224 176 74 / 0.18);
+}
+
+.spell-dialog h2 {
+  color: var(--gold-bright);
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+}
+
+.spell-notice {
+  border-color: var(--gold-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+}

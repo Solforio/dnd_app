@@ -17,8 +17,9 @@ import { FormulaRoller } from './features/dice/FormulaRoller';
 import { History } from './features/dice/History';
 import { ModeSelector } from './features/dice/ModeSelector';
 import { Presets } from './features/dice/Presets';
-import { HpPanel } from './features/hp/HpPanel';
-import { HpQuick } from './features/hp/HpQuick';
+import { DieIcon } from './features/dice/DieIcon';
+import { HpManage } from './features/hp/HpPanel';
+import { VitalStrip } from './features/vitals/VitalStrip';
 import { InventoryPage } from './features/inventory/InventoryPage';
 import { MapPage } from './features/maps/MapPage';
 import { MapsPage } from './features/maps/MapsPage';
@@ -33,7 +34,6 @@ function Home() {
 
   return (
     <main className="app-main">
-      <HpQuick />
       <div className="column">
         <section className="card stack" aria-label="Risultato">
           <D20Result roll={lastRoll} />
@@ -44,7 +44,7 @@ function Home() {
         <Presets />
       </div>
       <div className="column">
-        <HpPanel />
+        <HpManage />
         <History />
       </div>
     </main>
@@ -57,6 +57,7 @@ function WithTabs({ children }: { children: ReactNode }) {
   return (
     <>
       <TabNav />
+      <VitalStrip />
       {phase === 'cloud' && (
         <div className="app-notice">
           <UploadDialog />
@@ -76,7 +77,10 @@ export function App() {
   return (
     <>
       <header className="app-header">
-        <h1>Compagno D&amp;D</h1>
+        <h1>
+          <DieIcon sides={20} size={30} className="brand-die" />
+          Compagno D&amp;D
+        </h1>
         {ready && <CharacterBar />}
         <AccountBar />
       </header>
