@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
+import { foldKey } from './foldStorage';
 
-const KEY = (id: string) => `dnd-companion:fold:${id}`;
+const KEY = foldKey;
 
 function readOpen(id: string, fallback: boolean): boolean {
   try {

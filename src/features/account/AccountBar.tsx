@@ -21,6 +21,13 @@ export function AccountBar() {
   return (
     <div className="row account-bar">
       <ThemeToggle />
+      <Link className="gear-link" to="/impostazioni" aria-label="Impostazioni" title="Impostazioni">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" className="glyph">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M19.1 4.9 17 7 M7 17l-2.1 2.1" />
+          <circle cx="12" cy="12" r="7" />
+        </svg>
+      </Link>
       <SyncBadge />
       {phase === 'cloud' && user ? (
         askForce ? (

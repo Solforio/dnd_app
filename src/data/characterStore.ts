@@ -10,6 +10,7 @@ import {
 import { rollFormula } from '../domain/dice/engine';
 import { parseFormula } from '../domain/dice/parser';
 import { cryptoDie } from '../domain/dice/rng';
+import { buzzForRoll } from './haptics';
 import type { RollMode } from '../domain/dice/types';
 import * as hpRules from '../domain/hp/hp';
 import type { Inventory } from '../domain/inventory';
@@ -159,6 +160,7 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
       const record = makeRecord(formula, c.rollMode, label);
       if (typeof record === 'string') return record;
       update({ history: addToHistory(c.history, record) });
+      buzzForRoll(record);
       return null;
     },
     setRollMode: (rollMode) => update({ rollMode }),

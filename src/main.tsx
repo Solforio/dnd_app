@@ -9,6 +9,7 @@ import './styles/fantasy.css';
 import './styles/extras.css';
 import './styles/transitions.css';
 import './styles/bestiary.css';
+import './styles/settings.css';
 
 startSession();
 

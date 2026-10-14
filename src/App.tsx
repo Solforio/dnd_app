@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Route, Routes, useLocation } from 'react-router';
 import { TabNav } from './components/TabNav';
 import { useCharacterStore } from './data/characterStore';
+import { initSettings } from './data/settingsStore';
 import { initTheme } from './data/themePref';
 import { classRgb } from './domain/classTheme';
 import { useSession } from './data/session';
@@ -11,6 +12,7 @@ import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
 import { CharactersPage } from './features/character/CharactersPage';
 import { SpellDialog, SpellNotice } from './features/grimoire/SpellDialog';
+import { SettingsPage } from './features/settings/SettingsPage';
 import { BestiaryPage } from './features/bestiary/BestiaryPage';
 import { MonsterDialog } from './features/bestiary/MonsterDialog';
 import { CombatPage } from './features/combat/CombatPage';
@@ -102,6 +104,7 @@ export function App() {
   useSectionTheme();
   useClassTheme();
   useEffect(() => initTheme(), []);
+  useEffect(() => initSettings(), []);
   const phase = useSession((s) => s.phase);
   const warning = useSession((s) => s.warning);
   const writeError = useSession((s) => s.writeError);
@@ -127,6 +130,7 @@ export function App() {
           <Route path="/accedi" element={<SignInPage />} />
           <Route path="/scheda" element={<WithTabs><SheetPage /></WithTabs>} />
           <Route path="/combattimento" element={<WithTabs><CombatPage /></WithTabs>} />
+          <Route path="/impostazioni" element={<WithTabs><SettingsPage /></WithTabs>} />
           <Route path="/bestiario" element={<WithTabs><BestiaryPage /></WithTabs>} />
           <Route path="/grimorio" element={<WithTabs><GrimoirePage /></WithTabs>} />
           <Route path="/zaino" element={<WithTabs><InventoryPage /></WithTabs>} />
