@@ -1,0 +1,57 @@
+/*
+ * Page transitions: when a tab is chosen the browser (View Transitions API, through the viewTransition
+ * prop of the tab links) fades the old page out and slides the new one in. The header, the tabs and the
+ * vital strip stay put. Browsers without the API just switch page, as before; the Animazioni setting
+ * (html[data-motion]) turns it off.
+ */
+
+.app-header {
+  view-transition-name: app-header;
+}
+
+.tabs {
+  view-transition-name: app-tabs;
+}
+
+.vital-strip {
+  view-transition-name: app-vitals;
+}
+
+::view-transition-old(root) {
+  animation: 170ms ease-in both page-out;
+}
+
+::view-transition-new(root) {
+  animation: 300ms cubic-bezier(0.2, 0.7, 0.2, 1) both page-in;
+}
+
+/* The parts that stay put do not fade or move. */
+::view-transition-old(app-header),
+::view-transition-new(app-header),
+::view-transition-old(app-tabs),
+::view-transition-new(app-tabs),
+::view-transition-old(app-vitals),
+::view-transition-new(app-vitals) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.995);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+html[data-motion='off']::view-transition-group(*),
+html[data-motion='off']::view-transition-old(*),
+html[data-motion='off']::view-transition-new(*) {
+  animation: none;
+}

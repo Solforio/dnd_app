@@ -257,7 +257,8 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 - **Sparkles** around the die on a critical hit (not for the roll already on screen when the page opens, and not with animations off).
 - **Grain** on the cards (an inline SVG noise, no image file), a **fading rule** after every card subtitle, an **ornament** above the footer.
 - **Light theme «pergamena»**: sun/moon button in the header (`dnd-companion:theme`). Contrast audit of all visible text on Tiri, Scheda, Combattimento, Grimorio, Zaino and Mappe, in both themes: all at 4.5 or more (an early audit flagged the header and the footer, which was a transition frozen in the background tab, plus the gold text: darkened). The die and the map controls keep their dark faces. Pages not audited: Gruppo, the sign-in page, dialogs other than the spell window.
-- Still open: ornate corner flourishes on the main title, a dark-red theme for the Master section, a map frame with a compass rose, a transition between pages, sound (optional, off by default).
+- **Page transition** (done): choosing a tab runs the page change inside a View Transition (old page fades up, new one slides in; header, tabs and vital strip stay still), started from the tab click handler because React Router does not do it with this router; off with the Animazioni setting, plain switch where the API does not exist. Checked: the transition is started on a tab click and not on ctrl-click.
+- Still open: ornate corner flourishes on the main title, a dark-red theme for the Master section, a map frame with a compass rose, sound (optional, off by default).
 
 ### Fantasy look, second pass (2026-10-14, bolder)
 

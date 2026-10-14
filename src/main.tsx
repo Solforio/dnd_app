@@ -7,6 +7,7 @@ import './styles/tokens.css';
 import './styles/global.css';
 import './styles/fantasy.css';
 import './styles/extras.css';
+import './styles/transitions.css';
 
 startSession();
 

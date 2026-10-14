@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router';
+import type { MouseEvent } from 'react';
+import { flushSync } from 'react-dom';
+import { NavLink, useNavigate } from 'react-router';
 import { useCharacterStore } from '../data/characterStore';
+import { diceMotionOn } from '../data/motionPref';
 
 /** Small line icons, one per section, drawn on a 24-pixel grid in the text colour. */
 const ICONS: Record<string, ReactNode> = {
@@ -51,10 +54,21 @@ const TABS = [
 
 export function TabNav() {
   const inCombat = useCharacterStore((s) => s.character.sheet.combat.active);
+  const navigate = useNavigate();
+
+  /** Changes page inside a view transition (a fade and slide) when the browser can and animations are on. */
+  const go = (e: MouseEvent<HTMLAnchorElement>, to: string) => {
+    const plain = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+    if (!plain || !document.startViewTransition || !diceMotionOn()) return;
+    e.preventDefault();
+    document.startViewTransition(() => {
+      flushSync(() => navigate(to));
+    });
+  };
   return (
     <nav className="tabs" aria-label="Sezioni">
       {TABS.map((t) => (
-        <NavLink key={t.to} to={t.to} end={t.end} className="tab">
+        <NavLink key={t.to} to={t.to} end={t.end} className="tab" onClick={(e) => go(e, t.to)}>
           <svg className="tab-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
             {ICONS[t.icon]}
           </svg>
