@@ -1,4 +1,6 @@
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -9,6 +11,7 @@ import {
   orderBy,
   query,
   setDoc,
+  updateDoc,
   startAfter,
   where,
   writeBatch,
@@ -38,6 +41,7 @@ import {
   type Role,
   type Sharing,
 } from '../domain/party';
+import { BESTIARY_LIMITS, BESTIARY_SCHEMA_VERSION, sanitizeEntry, type BestiaryEntry } from '../domain/bestiary';
 import type { SessionUser } from './auth';
 import { deleteAllPartyMaps } from './mapRepo';
 
@@ -54,6 +58,7 @@ const codeRef = (db: Firestore, code: string) => doc(db, 'partyCodes', code);
 const membershipRef = (db: Firestore, uid: string, pid: string) => doc(db, 'users', uid, 'memberships', pid);
 const questsOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'quests');
 const logOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'log');
+const bestiaryOf = (db: Firestore, pid: string) => collection(db, 'parties', pid, 'bestiary');
 
 const newCode = () => generateJoinCode(cryptoRandomBelow);
 
@@ -196,12 +201,13 @@ export function forgetMembership(db: Firestore, uid: string, pid: string): Promi
 export async function deleteParty(db: Firestore, uid: string, party: Party): Promise<void> {
   const pid = party.id;
   await deleteAllPartyMaps(db, pid);
-  const [quests, log, members] = await Promise.all([
+  const [quests, log, members, bestiary] = await Promise.all([
     getDocs(questsOf(db, pid)),
     getDocs(logOf(db, pid)),
     getDocs(collection(db, 'parties', pid, 'members')),
+    getDocs(bestiaryOf(db, pid)),
   ]);
-  const refs: DocumentReference[] = [...quests.docs, ...log.docs].map((d) => d.ref);
+  const refs: DocumentReference[] = [...quests.docs, ...log.docs, ...bestiary.docs].map((d) => d.ref);
   for (let i = 0; i < refs.length; i += 450) {
     const b = writeBatch(db);
     refs.slice(i, i + 450).forEach((r) => b.delete(r));
@@ -298,6 +304,50 @@ export function deleteQuest(db: Firestore, pid: string, id: string) {
 export async function fetchClosedQuests(db: Firestore, pid: string): Promise<Quest[]> {
   const snap = await getDocs(query(questsOf(db, pid), where('status', 'in', ['completed', 'failed'] satisfies QuestStatus[])));
   return snap.docs.map((d) => sanitizeQuest(d.id, d.data())).sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+// --- Bestiary: parties/{pid}/bestiary/{entryId} ---
+
+/** Listens to the party's bestiary (at most 300 entries) while the party page is open. */
+export function watchBestiary(db: Firestore, pid: string, onEntries: (e: BestiaryEntry[]) => void, onError: () => void): Unsubscribe {
+  return onSnapshot(query(bestiaryOf(db, pid), limit(BESTIARY_LIMITS.entries)), (s) => onEntries(s.docs.map((d) => sanitizeEntry(d.id, d.data()))), onError);
+}
+
+export function createBestiaryEntry(db: Firestore, pid: string, e: BestiaryEntry): Promise<void> {
+  return setDoc(doc(bestiaryOf(db, pid), e.id), {
+    schemaVersion: BESTIARY_SCHEMA_VERSION,
+    name: e.name,
+    srdId: e.srdId,
+    creatureType: e.creatureType,
+    place: e.place,
+    notes: e.notes,
+    revealed: e.revealed,
+    custom: e.custom,
+    createdBy: e.createdBy,
+    createdByName: e.createdByName,
+    createdAt: e.createdAt,
+    updatedAt: e.updatedAt,
+  });
+}
+
+export async function bestiaryEntryExists(db: Firestore, pid: string, id: string): Promise<boolean> {
+  return (await getDoc(doc(bestiaryOf(db, pid), id))).exists();
+}
+
+export type BestiaryPatch = Partial<Pick<BestiaryEntry, 'creatureType' | 'place' | 'notes' | 'revealed' | 'custom'>>;
+
+/** One write; only the fields that changed, so two members editing different things do not overwrite each other. */
+export function updateBestiaryEntry(db: Firestore, pid: string, id: string, patch: BestiaryPatch): Promise<void> {
+  return updateDoc(doc(bestiaryOf(db, pid), id), { ...patch, updatedAt: Date.now() });
+}
+
+/** Marks one section as known (or unknown) with an atomic array update: two members ticking at once both stay. */
+export function setBestiaryReveal(db: Firestore, pid: string, id: string, section: string, known: boolean): Promise<void> {
+  return updateDoc(doc(bestiaryOf(db, pid), id), { revealed: known ? arrayUnion(section) : arrayRemove(section), updatedAt: Date.now() });
+}
+
+export function deleteBestiaryEntry(db: Firestore, pid: string, id: string): Promise<void> {
+  return deleteDoc(doc(bestiaryOf(db, pid), id));
 }
 
 // --- Session log ---

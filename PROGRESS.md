@@ -192,7 +192,15 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 - This needs **hit dice tracking**, which is the open question in this file: spend on a short rest, recover half (min 1) on a long rest. I fold it into this idea since the data (die per class, level) is the same.
 - **Difficulty**: S to M. **Depends on**: sheet `classes` (multiclass: one hit die per class, pool per die type), HP domain. **Risks**: sheet max HP is typed by hand today, so migration must not rewrite it (character v4 adds `hitDice` with sensible defaults, empty = untracked). Level-up dialog must show the exact arithmetic.
 
-### [ ] I5. Bestiary: full monster list + party "Pokédex" bestiary
+### [x] I5. Bestiary: full monster list + party "Pokédex" bestiary (done 2026-10-14)
+
+- **A. Catalogue**: tab **Bestiario**, 334 SRD 5.1 monsters (`scripts/build-srd-monsters.mjs` builds `public/srd/monsters.json` from the 5e-bits database; 451 KB, 75 KB gzipped, fetched when the tab opens; text in English, labels in Italian). Search by name, filters by type, size and challenge rating, 40 at a time, full stat block in a parchment window. `src/domain/bestiary.ts` (+ tests on the real data).
+- **B. Party bestiary**, card «Bestiario del gruppo» on the party page (foldable): starts empty; a creature is added by typing its name (an SRD name is recognised, anything else becomes a custom creature with AC, HP and speed typed by hand) or with «Aggiungi al bestiario» under any stat block of the catalogue (choose the party). The card of each creature is a Pokédex card: number (its place in the SRD list, «—» for a custom one), a **black silhouette until the party knows something**, a progress bar. The creature window has the list of what the party knows (12 sections: AC, HP, speed, abilities, saves and skills, resistances and immunities, senses, languages, challenge rating, traits, actions, legendary actions; the DM tells, any member ticks): the stat block shows only those, the rest is «???». Place and notes are free text.
+- **Sync and rules** (deployed to `dungeons-9446d`): `parties/{pid}/bestiary/{entryId}`, one document per creature, listener only while the party page is open (at most 300). Every member adds and fills in; name, SRD id and author never change; the author or the DM deletes. An SRD creature has the fixed id `srd-<id>`, so it can never be added twice even by two members at once. Ticking a section uses an atomic array update (found by testing: two quick clicks overwrote each other with a plain write); text fields are saved when they lose focus and again when the window closes (Escape too). The party's deletion removes its bestiary. 53 rules tests.
+- **Decision**: any member may edit the notes and the known sections (the brief's pattern for the session log and pins), not only the DM. The whole thing is gated by what is ticked, not by who: it is the honour system of a table. If the DM alone should reveal, it is one rule line.
+- **Quota**: opening the party page reads one document per creature (30 creatures = 30 reads, again for each member who opens it); each tick or edit is one write.
+- **Checked** on the emulators: add SRD and custom, duplicate refused, reveal and masking, notes, delete, add from the catalogue and refused twice. Not checked: two real users at once, and the look on screen.
+- Original note follows.
 
 - **Two parts**:
   - A. **Monster list**: all SRD 5.1 monsters (~330) as static JSON in `public/` (CC-BY attribution already in the app), lazy-loaded, searchable, filters by type, CR and size.
@@ -302,7 +310,7 @@ Recommended order: 1 and 2 (an afternoon, no data changes), then 3 and 5, then 4
 3. **I2** (done) Photos: introduces "small image in Firestore" and the first rules change for shared data, simpler than the bestiary.
 4. **I6a** (done) Spell slots + rests (no spell data); then I6b (spell list)
    **I8** (combat screen, done) followed I6b.
-5. **I5** Bestiary (monster list first, party bestiary second): first feature with shared data written by every member; reuses the pins pattern.
+5. **I5** (done) Bestiary (monster list first, party bestiary second): first feature with shared data written by every member; reuses the pins pattern.
 6. **I7** Master: needs the commands channel and a privacy decision, builds on all of the above; last of the sync features.
 7. **I1** Faerûn bulk import: best done together with the PWA phase (offline shell), since offline is part of the request.
 

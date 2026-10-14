@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { closeParty, deleteParty, forgetParty, openParty, usePartyStore } from '../../data/partyStore';
 import { useSession } from '../../data/session';
+import { PartyBestiary } from '../bestiary/PartyBestiary';
 import { MemberCards } from './MemberCards';
 import { MySharing } from './MySharing';
 import { PartiesPage } from './PartiesPage';
@@ -121,6 +122,7 @@ export function PartyPage() {
       </nav>
       <PartyHeader party={party} isDm={isDm} />
       <MemberCards pid={party.id} members={members} myUid={user.uid} isDm={isDm} />
+      <PartyBestiary pid={party.id} uid={user.uid} isDm={isDm} />
       <div className="column">
         <QuestBoard isDm={isDm} />
         <SessionLog myUid={user.uid} isDm={isDm} />

@@ -293,6 +293,41 @@ service cloud.firestore {
         allow delete: if isOwner(uid) || isPartyOwner(pid);
       }
 
+      // The party's bestiary: creatures met in the campaign and what the group has learned about them.
+      // Every member adds and fills it in; the author or the DM deletes an entry.
+      match /bestiary/{entryId} {
+        function validEntry(data) {
+          return data.keys().hasOnly([
+              'schemaVersion', 'name', 'srdId', 'creatureType', 'place', 'notes', 'revealed', 'custom',
+              'createdBy', 'createdByName', 'createdAt', 'updatedAt'])
+            && data.schemaVersion is int
+            && shortString(data.name, 80) && data.name.size() > 0
+            && (data.srdId == null || shortString(data.srdId, 80))
+            && shortString(data.creatureType, 40)
+            && shortString(data.place, 100)
+            && shortString(data.notes, 2000)
+            && data.revealed is list && data.revealed.size() <= 14
+            && data.custom is map && data.custom.size() <= 3
+            && shortString(data.createdBy, 64)
+            && shortString(data.createdByName, 60)
+            && data.createdAt is int
+            && data.updatedAt is int;
+        }
+
+        allow read: if isMember(pid);
+        allow create: if isMember(pid)
+          && validEntry(request.resource.data)
+          && request.resource.data.createdBy == request.auth.uid;
+        // Name, SRD monster and author never change; the rest is for every member to fill in.
+        allow update: if isMember(pid)
+          && validEntry(request.resource.data)
+          && request.resource.data.name == resource.data.name
+          && request.resource.data.srdId == resource.data.srdId
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isMember(pid) && (resource.data.createdBy == request.auth.uid || isPartyOwner(pid));
+      }
+
       match /quests/{questId} {
         function validQuest(data) {
           return data.keys().hasOnly(['schemaVersion', 'title', 'description', 'status', 'updatedAt'])

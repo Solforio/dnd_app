@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { ensureMonsterCatalogue, useMonsterCatalogue } from '../../data/monsterCatalogue';
 import { useMonsterDialog } from '../../data/monsterDialog';
+import { AddToParty } from './AddToParty';
 import {
   CR_STEPS,
   filterMonsters,
@@ -106,7 +107,7 @@ export function BestiaryPage() {
         <ul className="plain monster-list">
           {matches.slice(0, shown).map((m) => (
             <li key={m.id}>
-              <button type="button" className="monster-row" onClick={() => open(m)}>
+              <button type="button" className="monster-row" onClick={() => open(m, <AddToParty monster={m} />)}>
                 <span className="monster-name">{m.name}</span>
                 <span className="small muted">
                   GS {formatCr(m.cr)} · {typeLabel(m.type)} · {SIZE_LABELS[m.size] ?? m.size}

@@ -409,3 +409,69 @@ describe('shared portraits', () => {
     await assertSucceeds(deleteDoc(doc(as('bob'), path('bob'))));
   });
 });
+
+describe('the party bestiary', () => {
+  const entry = (uid: string, over: Record<string, unknown> = {}) => ({
+    schemaVersion: 1,
+    name: 'Gnoll',
+    srdId: 'gnoll',
+    creatureType: '',
+    place: 'Strada per Phandalin',
+    notes: '',
+    revealed: ['ac'],
+    custom: { ac: null, hp: '', speed: '' },
+    createdBy: uid,
+    createdByName: uid,
+    createdAt: T,
+    updatedAt: T,
+    ...over,
+  });
+  const path = (id: string) => `parties/p1/bestiary/${id}`;
+
+  it('lets every member add an entry as themselves, and the whole party read it', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('bob'), path('e1')), entry('bob')));
+    await assertSucceeds(setDoc(doc(as('alice'), path('e2')), entry('alice', { name: 'Orco', srdId: 'orc' })));
+    await assertSucceeds(getDoc(doc(as('alice'), path('e1'))));
+    await assertSucceeds(getDocs(collection(as('bob'), 'parties/p1/bestiary')));
+  });
+
+  it('keeps it from strangers, and refuses an entry signed as someone else', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('bob'), path('e1')), entry('bob')));
+    await assertFails(getDoc(doc(as('eve'), path('e1'))));
+    await assertFails(setDoc(doc(as('eve'), path('e9')), entry('eve')));
+    await assertFails(setDoc(doc(as('bob'), path('e3')), entry('alice')));
+  });
+
+  it('checks the entry: name, lengths, sections, unknown fields', async () => {
+    await seedParty();
+    const db = as('bob');
+    await assertFails(setDoc(doc(db, path('e1')), entry('bob', { name: '' })));
+    await assertFails(setDoc(doc(db, path('e1')), entry('bob', { notes: 'x'.repeat(2001) })));
+    await assertFails(setDoc(doc(db, path('e1')), entry('bob', { revealed: Array(15).fill('ac') })));
+    await assertFails(setDoc(doc(db, path('e1')), entry('bob', { extra: 1 })));
+    await assertSucceeds(setDoc(doc(db, path('e1')), entry('bob', { srdId: null, creatureType: 'Drago di fiamma' })));
+  });
+
+  it('lets any member fill in notes and what is known, but not rename it or change its author', async () => {
+    await seedParty();
+    await assertSucceeds(setDoc(doc(as('bob'), path('e1')), entry('bob')));
+    const alice = as('alice');
+    await assertSucceeds(updateDoc(doc(alice, path('e1')), { notes: 'Odiano la luce', revealed: ['ac', 'hp'], updatedAt: T + 1 }));
+    await assertFails(updateDoc(doc(alice, path('e1')), { name: 'Altro' }));
+    await assertFails(updateDoc(doc(alice, path('e1')), { srdId: 'orc' }));
+    await assertFails(updateDoc(doc(alice, path('e1')), { createdBy: 'alice' }));
+    await assertFails(updateDoc(doc(as('eve'), path('e1')), { notes: 'intruso' }));
+  });
+
+  it('is deleted by its author or by the DM, not by another player', async () => {
+    await seedParty();
+    await join(as('carol'), 'carol');
+    await assertSucceeds(setDoc(doc(as('bob'), path('e1')), entry('bob')));
+    await assertFails(deleteDoc(doc(as('carol'), path('e1'))));
+    await assertSucceeds(deleteDoc(doc(as('alice'), path('e1'))));
+    await assertSucceeds(setDoc(doc(as('bob'), path('e2')), entry('bob')));
+    await assertSucceeds(deleteDoc(doc(as('bob'), path('e2'))));
+  });
+});
