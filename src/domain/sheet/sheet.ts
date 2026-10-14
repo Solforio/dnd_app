@@ -1,7 +1,7 @@
 import { formulaToText, parseFormula, DICE_LIMITS } from '../dice/parser';
 import type { FormulaTerm } from '../dice/types';
 import { isHitDie, recoverHitDice } from './hitDice';
-import { defaultSpellcasting, restoreSlots, SLOT_LEVELS, SPELLCASTING_LIMITS, type Spellcasting } from './spellSlots';
+import { defaultSpellcasting, restoreSlots, SLOT_LEVELS, SPELLCASTING_LIMITS, type ClassSpells, type Spellcasting } from './spellSlots';
 import { asArray, asBool, asInt, asOneOf, asRecord, asString } from '../schema/sanitize';
 import {
   ABILITIES,
@@ -202,6 +202,17 @@ function sanitizeFeature(raw: unknown, newId: () => string): Feature {
   };
 }
 
+const SPELL_LIST_LIMIT = 400;
+
+function sanitizeSpellLists(raw: unknown): Record<string, ClassSpells> {
+  const ids = (v: unknown) => [...new Set(asArray(v, SPELL_LIST_LIMIT).map((x) => asString(x, 80)).filter((x) => x !== ''))];
+  return Object.fromEntries(
+    Object.entries(asRecord(raw))
+      .slice(0, 12)
+      .map(([key, v]) => [key.slice(0, 30), { known: ids(asRecord(v).known), prepared: ids(asRecord(v).prepared) }]),
+  );
+}
+
 function sanitizeSpellcasting(raw: unknown): Spellcasting {
   const r = asRecord(raw);
   const levels = (v: unknown, max: number) =>
@@ -210,6 +221,8 @@ function sanitizeSpellcasting(raw: unknown): Spellcasting {
     slotsUsed: levels(r.slotsUsed, 99),
     pactUsed: asInt(r.pactUsed, 0, 99, 0),
     manualMax: Array.isArray(r.manualMax) ? levels(r.manualMax, SPELLCASTING_LIMITS.slots) : null,
+    lists: sanitizeSpellLists(r.lists),
+    ignoreLimits: asBool(r.ignoreLimits),
   };
 }
 

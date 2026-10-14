@@ -11,6 +11,14 @@ export const SLOT_LEVELS = 9;
 
 export type CasterKind = 'full' | 'half' | 'third' | 'pact';
 
+/** The spells of one class: ids from the SRD catalogue. */
+export interface ClassSpells {
+  /** Cantrips, plus the spells known (known mode) or in the spellbook (wizard). */
+  known: string[];
+  /** Spells prepared (prepared mode and wizard). */
+  prepared: string[];
+}
+
 export interface Spellcasting {
   /** Slots spent per spell level (index 0 = 1st level), until the next long rest. */
   slotsUsed: number[];
@@ -18,12 +26,16 @@ export interface Spellcasting {
   pactUsed: number;
   /** Hand-set maximums per spell level, or null to follow the class levels. */
   manualMax: number[] | null;
+  /** The spells of each casting class, by class key ('wizard', 'cleric', 'eldritch-knight'…). */
+  lists: Record<string, ClassSpells>;
+  /** Skip the class list, spell level and count checks (feats, items, house rules). */
+  ignoreLimits: boolean;
 }
 
 export const SPELLCASTING_LIMITS = { slots: 9 } as const;
 
 export function defaultSpellcasting(): Spellcasting {
-  return { slotsUsed: Array<number>(SLOT_LEVELS).fill(0), pactUsed: 0, manualMax: null };
+  return { slotsUsed: Array<number>(SLOT_LEVELS).fill(0), pactUsed: 0, manualMax: null, lists: {}, ignoreLimits: false };
 }
 
 const FULL = ['bardo', 'bard', 'chierico', 'cleric', 'druido', 'druid', 'stregone', 'sorcerer', 'mago', 'wizard'];

@@ -1904,3 +1904,71 @@ button.link {
   min-height: 32px;
   padding-block: 0;
 }
+
+/* Grimoire */
+.spell-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.spell-row {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.spell-details summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+
+.spell-name {
+  font-family: var(--font-serif);
+  font-weight: 600;
+}
+
+.spell-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+.spell-facts dt {
+  color: var(--muted);
+}
+
+.spell-facts dd {
+  margin: 0;
+}
+
+.spell-actions,
+.cast-menu {
+  gap: var(--space-2);
+}
+
+.spell-pick {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.counts {
+  gap: var(--space-2);
+}
+
+.count-chip {
+  padding: 2px var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.875rem;
+}
+
+.count-chip.over {
+  border-color: var(--red);
+  color: var(--red);
+}

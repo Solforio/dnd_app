@@ -135,7 +135,7 @@ describe('hand-set slots', () => {
 describe('sanitizing', () => {
   it('defaults old sheets and clamps junk', () => {
     const old = sanitizeSheet({}, () => 'x').spellcasting;
-    expect(old).toEqual({ slotsUsed: Array(9).fill(0), pactUsed: 0, manualMax: null });
+    expect(old).toEqual({ slotsUsed: Array(9).fill(0), pactUsed: 0, manualMax: null, lists: {}, ignoreLimits: false });
     const junk = sanitizeSheet({ spellcasting: { slotsUsed: [1, 'x', 500], pactUsed: -3, manualMax: [12, 2] } }, () => 'x').spellcasting;
     expect(junk.slotsUsed.slice(0, 3)).toEqual([1, 0, 99]);
     expect(junk.pactUsed).toBe(0);

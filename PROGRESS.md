@@ -221,12 +221,22 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 - **Limits to accept**: a change is applied only when the player's device is online with the app open (the DM sees "in attesa" until then). Pending commands older than N hours expire.
 - **Difficulty**: L. **Depends on**: Phase 3 parties, HP/condition domain functions (already pure), the bestiary pattern (I5) for DM-only tools later. **Risks**: privacy (opt-in required), abuse (a DM applying commands the player never sees: always log them and show a toast), quota (a listener per device on the commands collection: reads only when a command arrives; snapshot publishing adds ~1 write per change for opted-in members), rules complexity. A "player must accept" mode is possible later.
 
+### [ ] I8. Combat screen (proposed by the user, 2026-10-14)
+
+- **Does it make sense? Yes.** At the table the same things are needed together and today they live on four pages: HP, conditions, saved attacks, available spells and slots, and the duration of effects. One screen that gathers them, plus a turn counter, is the natural next step after the grimoire.
+- **Shape**: a «Combattimento» entry (button on Tiri, then a tab while active) that turns combat mode on. Contents: HP panel with quick damage and healing, conditions, the attacks of the sheet with their roll buttons (play mode, as on the sheet), spell slots and the spells to cast (a cast spends the slot and, when the spell has a duration, adds an effect), the list of **effects with remaining rounds**, and a **«Fine turno»** button: round +1, every timed effect −1, expired ones are announced and removed. «Termina combattimento» clears the effects and the round (conditions stay, they are game state).
+- **Data**: `combat: { active, round, effects[] }` inside the character (survives a reload mid-fight, no migration: sanitized defaults); effect = name, remaining rounds or null (manual), concentration flag, note. Not shared with the party at first.
+- **Concentration**: one concentration effect at a time (casting a new one asks to drop the old one); taking damage while concentrating shows the CON save with DC max(10, half the damage) and a roll button.
+- **Durations**: SRD spell durations are text («1 minute», «Concentration, up to 1 hour»); a small parser turns «1 round» and minutes into rounds (1 minute = 10 rounds), longer durations stay manual. Tested like the dice parser.
+- **Difficulty**: M to L. **Depends on**: I6b (spell data with durations; the screen can start with manual effects and attacks before that), existing HP, conditions, attacks, slots. **Risks**: scope creep (initiative tracking belongs with the Master section, I7: the DM's shared initiative order could later feed «è il tuo turno»); end-of-turn versus start-of-turn expiry (start with «end of my turn»); duplicating UI instead of reusing the existing cards (reuse them).
+
 ### Chosen order (2026-10-14)
 
 1. **I3** 3D dice: already requested as the next step, no dependencies, no sync.
 2. **I4** (done) Level-up HP + hit dice: small, closes the open question, and its class/level data is needed by I6.
 3. **I2** (done) Photos: introduces "small image in Firestore" and the first rules change for shared data, simpler than the bestiary.
-4. **I6a** (done) Spell slots + rests (no spell data); I6b/c later.
+4. **I6a** (done) Spell slots + rests (no spell data); then I6b (spell list)
+   **I8** (combat screen) follows I6b: it needs the spells and their durations.
 5. **I5** Bestiary (monster list first, party bestiary second): first feature with shared data written by every member; reuses the pins pattern.
 6. **I7** Master: needs the commands channel and a privacy decision, builds on all of the above; last of the sync features.
 7. **I1** Faerûn bulk import: best done together with the PWA phase (offline shell), since offline is part of the request.
