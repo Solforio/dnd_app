@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import { accountsAvailable } from '../../data/auth';
 import { requestSignOut, useSession } from '../../data/session';
 import { SyncBadge } from './SyncBadge';
@@ -19,6 +20,7 @@ export function AccountBar() {
 
   return (
     <div className="row account-bar">
+      <ThemeToggle />
       <SyncBadge />
       {phase === 'cloud' && user ? (
         askForce ? (

@@ -143,6 +143,7 @@ export function MapPage({ scope: kind }: { scope: 'personal' | 'party' }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<MapPin | null>(null);
   const [message, setMessage] = useState('');
+  const [full, setFull] = useState(false);
 
   useEffect(() => {
     if (kind === 'personal') void ensurePersonalMaps();
@@ -186,6 +187,31 @@ export function MapPage({ scope: kind }: { scope: 'personal' | 'party' }) {
   const focusPinId = cameFrom ? pins.find((p) => p.linkMapId === cameFrom)?.id : null;
 
   const report = (err: string | null, ok: string) => setMessage(err ?? ok);
+
+  const panel = current && (
+        <PinPanel
+          key={current.id}
+          pin={current}
+          isNew={draft !== null}
+          canEdit={canEdit(current)}
+          maps={maps}
+          mapId={map.id}
+          linkTo={(id) => mapPath(scope, id)}
+          onSave={async (p) => {
+            report(await savePin(scope, map.id, p), `Segnalino «${p.title}» salvato.`);
+            setDraft(null);
+            setSelected(p.id);
+          }}
+          onDelete={async () => {
+            report(await removePin(scope, map.id, current.id), 'Segnalino eliminato.');
+            setSelected(null);
+          }}
+          onClose={() => {
+            setDraft(null);
+            setSelected(null);
+          }}
+        />
+  );
 
   return (
     <main className="app-main map-layout">
@@ -250,6 +276,31 @@ export function MapPage({ scope: kind }: { scope: 'personal' | 'party' }) {
               setDraft(null);
               setSelected(id);
             }}
+            full={full}
+            onFullChange={setFull}
+            overlay={
+              <>
+                <div className="row">
+                  <button
+                    type="button"
+                    className={addMode ? 'primary' : undefined}
+                    aria-pressed={addMode}
+                    onClick={() => {
+                      setAddMode(!addMode);
+                      setMessage(addMode ? '' : 'Tocca la mappa nel punto in cui vuoi il segnalino.');
+                    }}
+                  >
+                    {addMode ? 'Annulla aggiunta' : 'Aggiungi segnalino'}
+                  </button>
+                </div>
+                {message && (
+                  <p className="small map-overlay-note" role="status">
+                    {message}
+                  </p>
+                )}
+                {panel}
+              </>
+            }
           />
         ) : image.status === 'missing' ? (
           <MissingImage fingerprint={map.fingerprint} onLoaded={() => setReload((r) => r + 1)} />
@@ -259,30 +310,7 @@ export function MapPage({ scope: kind }: { scope: 'personal' | 'party' }) {
       </div>
 
       <aside className="map-side stack">
-        {current && (
-          <PinPanel
-            key={current.id}
-            pin={current}
-            isNew={draft !== null}
-            canEdit={canEdit(current)}
-            maps={maps}
-            mapId={map.id}
-            linkTo={(id) => mapPath(scope, id)}
-            onSave={async (p) => {
-              report(await savePin(scope, map.id, p), `Segnalino «${p.title}» salvato.`);
-              setDraft(null);
-              setSelected(p.id);
-            }}
-            onDelete={async () => {
-              report(await removePin(scope, map.id, current.id), 'Segnalino eliminato.');
-              setSelected(null);
-            }}
-            onClose={() => {
-              setDraft(null);
-              setSelected(null);
-            }}
-          />
-        )}
+        {!full && panel}
         <section className="card stack" aria-labelledby="pins-title">
           <h3 id="pins-title">Segnalini ({pins.length})</h3>
           {pins.length === 0 ? (

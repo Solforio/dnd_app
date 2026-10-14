@@ -1,6 +1,7 @@
 import { formatNumber } from '../../domain/format/number';
 import { CONDITION_EFFECTS, CONDITIONS_SOURCE, exhaustionEffects, impliedConditions } from '../../domain/sheet/conditionEffects';
 import { CONDITION_LABELS, CONDITIONS, EXHAUSTION_MAX, type ConditionId } from '../../domain/sheet/rules';
+import { ConditionGlyph } from '../icons/Glyphs';
 import { editSheet, useSheet } from './sheetHooks';
 
 /** What the active conditions do: one line each, the full SRD text on demand. */
@@ -19,7 +20,7 @@ function ActiveEffects({ conditions, exhaustion }: { conditions: ConditionId[]; 
             <li key={c} className="effect">
               <details>
                 <summary>
-                  <strong>{CONDITION_LABELS[c]}</strong>: {e.summary}
+                  <ConditionGlyph id={c} /> <strong>{CONDITION_LABELS[c]}</strong>: {e.summary}
                 </summary>
                 <ul className="effect-details small">
                   {e.details.map((d) => (
@@ -70,7 +71,7 @@ export function ConditionsCard() {
               }))
             }
           >
-            {CONDITION_LABELS[c]}
+            <ConditionGlyph id={c} /> {CONDITION_LABELS[c]}
           </button>
         ))}
       </div>

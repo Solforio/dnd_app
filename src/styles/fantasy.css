@@ -383,7 +383,7 @@ select:focus {
 
 .app-main > *,
 .app-main .column > * {
-  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 
 .app-main .column > :nth-child(2) {

@@ -6,6 +6,8 @@ import { HP_LIMIT } from '../../domain/hp/hp';
 import { classSummary } from '../../domain/sheet/sheet';
 import { DeathSaves } from '../hp/DeathSaves';
 import { CharacterAvatar } from '../portrait/Avatar';
+import { CONDITION_LABELS } from '../../domain/sheet/rules';
+import { ConditionGlyph } from '../icons/Glyphs';
 import { ConcentrationCheck } from './ConcentrationCheck';
 
 /**
@@ -70,6 +72,11 @@ export function VitalStrip() {
           <span className="vital-badge" title="Classe armatura">
             <span className="small muted">CA</span> {formatNumber(sheet.ac)}
           </span>
+          {sheet.conditions.map((c) => (
+            <span key={c} className="vital-condition" title={CONDITION_LABELS[c]} role="img" aria-label={CONDITION_LABELS[c]}>
+              <ConditionGlyph id={c} />
+            </span>
+          ))}
           {sheet.combat.active && (
             <Link to="/combattimento" className="vital-badge live" aria-label={`Combattimento, round ${sheet.combat.round}`}>
               Round {formatNumber(sheet.combat.round)}

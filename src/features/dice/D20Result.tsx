@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useCharacterStore } from '../../data/characterStore';
 import { trayFormula, useTray } from '../../data/trayStore';
 import type { RollRecord } from '../../domain/character';
@@ -19,8 +20,27 @@ function naturalRoll(roll: RollRecord, sides: number): number | undefined {
   return kept.length === 1 ? kept[0]!.value : undefined;
 }
 
+const SPARKS = Array.from({ length: 14 }, (_, i) => {
+  const angle = (i / 14) * Math.PI * 2 + 0.2;
+  const reach = 90 + (i % 3) * 28;
+  return { dx: Math.round(Math.cos(angle) * reach), dy: Math.round(Math.sin(angle) * reach), delay: (i % 4) * 0.05 };
+});
+
+/** A burst of gold stars around the die when it settles on a critical hit (hidden when animations are off). */
+function Sparkles() {
+  return (
+    <span className="sparkles" aria-hidden="true">
+      {SPARKS.map((s, i) => (
+        <i key={i} style={{ '--dx': `${s.dx}px`, '--dy': `${s.dy}px`, animationDelay: `${1.05 + s.delay}s` } as React.CSSProperties} />
+      ))}
+    </span>
+  );
+}
+
 /** The memorable element: a large d20 showing the last total. */
 export function D20Result({ roll }: { roll: RollRecord | undefined }) {
+  // The roll already on screen when the page opens does not throw sparks again.
+  const [shownAtOpen] = useState(roll?.id);
   const tray = useTray();
   const chosen = trayFormula(tray);
   const rollChosen = useCharacterStore((s) => s.roll);
@@ -46,6 +66,7 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
           onRoll={chosen ? () => rollChosen(chosen) : undefined}
           rollLabel={`Lancia ${chosen}`}
         />
+        {roll?.crit && roll.id !== shownAtOpen && <Sparkles key={roll.id} />}
       </div>
       <p className="small muted die-hint">
         {chosen ? (

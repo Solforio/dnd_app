@@ -3,6 +3,7 @@ import { useSpellDialog } from '../../data/spellDialog';
 import { newId } from '../../domain/character';
 import { castOptions, castWithEffect, type CastChoice, type Spell } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
+import { SchoolGlyph } from '../icons/Glyphs';
 import { excerpt, levelLabel } from './labels';
 
 /** Name (opens the full text), level, tags and the start of the description. */
@@ -15,7 +16,7 @@ export function SpellSummary({ spell }: { spell: Spell }) {
           {spell.name}
         </button>
         <span className="small muted">
-          {levelLabel(spell.level)} · {spell.school}
+          <SchoolGlyph school={spell.school} /> {levelLabel(spell.level)} · {spell.school}
         </span>
         {spell.concentration && (
           <span className="result-tag" title="Concentrazione">

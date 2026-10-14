@@ -3,6 +3,7 @@ import { useSpellCatalogue } from '../../data/spellCatalogue';
 import { addSpell, listOf, type Capacity, type SpellClass } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
 import { excerpt, levelLabel } from './labels';
+import { SchoolGlyph } from '../icons/Glyphs';
 import { ReadButton } from './SpellRow';
 
 const SHOWN = 30;
@@ -57,7 +58,7 @@ export function SpellPicker({ sc, cap, onMessage }: { sc: SpellClass; cap: Capac
               <div className="spell-title">
                 <strong>{sp.name}</strong>
                 <span className="small muted">
-                  {levelLabel(sp.level)} · {sp.school}
+                  <SchoolGlyph school={sp.school} /> {levelLabel(sp.level)} · {sp.school}
                 </span>
               </div>
               <p className="small spell-excerpt">{excerpt(sp.text)}</p>

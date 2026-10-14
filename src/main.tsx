@@ -6,6 +6,7 @@ import { startSession } from './data/session';
 import './styles/tokens.css';
 import './styles/global.css';
 import './styles/fantasy.css';
+import './styles/extras.css';
 
 startSession();
 

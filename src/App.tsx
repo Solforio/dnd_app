@@ -3,6 +3,8 @@ import { Route, Routes, useLocation } from 'react-router';
 import { TabNav } from './components/TabNav';
 import { useCharacterStore } from './data/characterStore';
 import { syncMotionAttribute } from './data/motionPref';
+import { initTheme } from './data/themePref';
+import { classRgb } from './domain/classTheme';
 import { useSession } from './data/session';
 import { AccountBar } from './features/account/AccountBar';
 import { SignInPage } from './features/account/SignInPage';
@@ -86,8 +88,18 @@ function useSectionTheme() {
   }, [pathname]);
 }
 
+/** The colour of the active character's first class goes to the CSS (vital strip, avatar ring). */
+function useClassTheme() {
+  const name = useCharacterStore((s) => s.character.sheet.classes[0]?.name ?? '');
+  useEffect(() => {
+    document.body.style.setProperty('--class-rgb', classRgb(name));
+  }, [name]);
+}
+
 export function App() {
   useSectionTheme();
+  useClassTheme();
+  useEffect(() => initTheme(), []);
   useEffect(() => syncMotionAttribute(), []);
   const phase = useSession((s) => s.phase);
   const warning = useSession((s) => s.warning);

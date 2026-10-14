@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSpellDialog } from '../../data/spellDialog';
 import type { Spell } from '../../domain/spells';
+import { SchoolGlyph } from '../icons/Glyphs';
 import { levelLabel } from './labels';
 
 /** Everything the SRD says about a spell: facts, text and the higher-level effect. */
@@ -8,7 +9,7 @@ export function SpellBody({ spell }: { spell: Spell }) {
   return (
     <div className="stack">
       <p className="small muted">
-        {levelLabel(spell.level)} · {spell.school}
+        <SchoolGlyph school={spell.school} /> {levelLabel(spell.level)} · {spell.school}
         {spell.concentration && ' · Concentrazione'}
         {spell.ritual && ' · Rituale'}
       </p>

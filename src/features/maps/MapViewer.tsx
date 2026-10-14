@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import {
   centreOn,
   clampView,
@@ -22,6 +22,11 @@ interface Props {
   focusPinId?: string | null;
   onAdd: (at: { x: number; y: number }) => void;
   onSelect: (pinId: string | null) => void;
+  /** Full screen: the map covers the page (and the browser's own full screen where it exists). */
+  full: boolean;
+  onFullChange: (full: boolean) => void;
+  /** What stays reachable over the map in full screen: adding a pin and the pin being read or edited. */
+  overlay?: ReactNode;
 }
 
 const CLICK_SLOP = 6;
@@ -31,12 +36,35 @@ const CLICK_SLOP = 6;
  * transform computed by the pure functions in domain/maps; pins are buttons
  * placed on top at their screen position, so they keep their size when zooming.
  */
-export function MapViewer({ url, image, pins, selectedId, addMode, focusPinId, onAdd, onSelect }: Props) {
+export function MapViewer({ url, image, pins, selectedId, addMode, focusPinId, onAdd, onSelect, full, onFullChange, overlay }: Props) {
   const box = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const [port, setPort] = useState<Size | null>(null);
   const [view, setView] = useState<View | null>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ moved: boolean; start: { x: number; y: number }; pinch?: number } | null>(null);
+
+  // Full screen: ask the browser for real full screen when it can (not on iPhone), keep the page from
+  // scrolling behind, and leave with Escape. Leaving through the browser's own Escape ends it here too.
+  useEffect(() => {
+    if (!full) return;
+    const el = frame.current;
+    if (el?.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {});
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: globalThis.KeyboardEvent) => e.key === 'Escape' && onFullChange(false);
+    const onChange = () => {
+      if (!document.fullscreenElement) onFullChange(false);
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('fullscreenchange', onChange);
+      document.body.style.overflow = previous;
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    };
+  }, [full, onFullChange]);
 
   // Viewport size, kept up to date.
   useEffect(() => {
@@ -151,7 +179,7 @@ export function MapViewer({ url, image, pins, selectedId, addMode, focusPinId, o
   };
 
   return (
-    <div className="map-frame">
+    <div ref={frame} className={`map-frame${full ? ' full' : ''}`}>
       <div
         ref={box}
         className={`map-viewport${addMode ? ' adding' : ''}`}
@@ -198,7 +226,17 @@ export function MapViewer({ url, image, pins, selectedId, addMode, focusPinId, o
           </>
         )}
       </div>
+      {full && overlay && <div className="map-overlay">{overlay}</div>}
       <div className="map-zoom" role="group" aria-label="Zoom">
+        <button
+          type="button"
+          aria-label={full ? 'Esci dallo schermo intero' : 'Schermo intero'}
+          aria-pressed={full}
+          title={full ? 'Esci dallo schermo intero (Esc)' : 'Schermo intero'}
+          onClick={() => onFullChange(!full)}
+        >
+          {full ? '✕' : '⛶'}
+        </button>
         <button type="button" aria-label="Avvicina" onClick={() => zoomBy(1.5)}>
           +
         </button>
