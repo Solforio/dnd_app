@@ -195,7 +195,11 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 - **Sync**: `parties/{pid}/bestiary/{entryId}`, one document per entry (concurrent edits on different monsters do not collide). Same permission pattern as the party pins: any member adds and edits notes, author or DM deletes (to be decided, see Chosen order). Listener only while the page is open.
 - **Difficulty**: L (data import and size; party sync and rules). **Depends on**: SRD JSON (not in the repo yet: needs a download from an SRD source; I will check the licence and note it), PWA for caching. **Risks**: SRD names are in English (the app is Italian: keep the English name as the key and let the user add an Italian name); JSON size (~1 MB) must stay lazy; quota ≈ 1 read per discovered entry on opening, 1 write per edit; set a limit (e.g. 300 entries).
 
-### [ ] I6. Grimoire: spells, slots, rests
+### [ ] I6. Grimoire: spells, slots, rests (step a done 2026-10-14; b and c to do)
+
+- **Step a done** (slots, pact slots, spending, rests; no spell data): `src/domain/sheet/spellSlots.ts` + tests, `spellcasting` inside the sheet (**no character version bump**, sanitized defaults), `SpellSlotsCard` on the Scheda page (round buttons: filled = available, tap to spend, empty = tap to recover), hand-set maximums in edit mode (0 to 9 per level) for unknown classes or house rules. Casters are recognised by class name (Italian or English); third casters by subclass (Cavaliere Mistico / Eldritch Knight, Mistificatore Arcano / Arcane Trickster).
+- **Correction of the note below**: the SRD 5.1 rounds half-caster levels **down** in multiclassing (the "round up" was the 2024 rule). A single casting class follows its own table (paladin and ranger from level 2, third casters from level 3); with several casting classes, full levels are added to half and third levels (each group summed, then rounded down).
+- Short rest restores the warlock's pact slots, long rest everything (also hit dice and uses, as before). Arcane Recovery is not automated: tap an empty circle to get a slot back. Feature uses already had the short/long recharge, so "the same rules for special abilities" holds. Checked in the browser (spend, long rest, status line).
 
 - **Rules to implement (SRD 5.1)**:
   - Slots per level from class level: full casters (bard, cleric, druid, sorcerer, wizard), half casters (paladin, ranger, round **up** as in the SRD multiclass table), third casters (eldritch knight, arcane trickster), **multiclass slot table**, warlock **Pact Magic** (separate slots, recovered on a **short** rest).
@@ -222,7 +226,7 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
 1. **I3** 3D dice: already requested as the next step, no dependencies, no sync.
 2. **I4** (done) Level-up HP + hit dice: small, closes the open question, and its class/level data is needed by I6.
 3. **I2** (done) Photos: introduces "small image in Firestore" and the first rules change for shared data, simpler than the bestiary.
-4. **I6a** Spell slots + rests (no spell data); I6b/c later.
+4. **I6a** (done) Spell slots + rests (no spell data); I6b/c later.
 5. **I5** Bestiary (monster list first, party bestiary second): first feature with shared data written by every member; reuses the pins pattern.
 6. **I7** Master: needs the commands channel and a privacy decision, builds on all of the above; last of the sync features.
 7. **I1** Faerûn bulk import: best done together with the PWA phase (offline shell), since offline is part of the request.
