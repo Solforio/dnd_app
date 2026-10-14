@@ -13,7 +13,7 @@ Read this file first, together with `cowork-prompt-dnd-app.md` (the brief). It i
 | 4: inventory and weight | **done** (2026-10-13) |
 | maps (built before 5 to 7, user request) | **done** (2026-10-14); rules (38 tests) deployed; two-user emulator check passes |
 | 5+: notes, codex, PWA | not started |
-| ideas I1 to I7 (see "Ideas") | registered 2026-10-14; I3 and I4 coded (visual check pending), rest not started |
+| ideas I1 to I7 (see "Ideas") | registered 2026-10-14; I3 and I4 done and deployed, rest not started |
 
 ## Phase 0: what exists
 
@@ -162,20 +162,20 @@ Proposals, not work orders. I decide order and timing, tick the box when done, a
   - Logged out: IndexedDB, like map images.
 - **Difficulty**: M. **Depends on**: `imageStore.prepareImage` (reuse the downscaler), new rules + tests. **Risks**: base64 inflates size by a third (still tiny); members could upload any picture to a shared party (moderation is up to the group; the DM can remove a member's portrait: add a rule for that); quota is 1 write per photo change, 1 read per member on opening a party.
 
-### [x] I3. 3D animation for every die (code done 2026-10-14, visual check pending)
+### [x] I3. 3D animation for every die (done and checked in the browser 2026-10-14)
 
 - **Done**: `src/features/dice/solids.ts` builds the d4 (tetrahedron), d6 (cube), d8 (octahedron), d10/d100 (pentagonal trapezohedron, planar kites) and d12 (dodecahedron); the d20 stays in `d20geometry.ts`. `Die3D` takes `sides`; `D20Result` picks the **first term with dice**, falls back to the d20 for flat-only or unusual dice (d3, d7…), and draws a d100 as a d10. The natural face goes in front when exactly one die of that kind was kept (not for the d100). `solids.test.ts` checks shape, planarity, convexity, numbering (opposite faces add up to n+1) and upright facing for every solid. Typecheck, lint and 164 tests pass.
-- **Not verified by eye**: the browser extension was not connected, so the font sizes of the total on each solid (`textScale`) and the look of the d10 are untested on screen. The d4 shows its number at the face centre, not at the vertex like a real one.
+- **Checked on screen**: every die rolled in the browser. The d4 and d6 rest slightly tilted (face-on they looked flat), the d10 stands on its long tip. The tray now builds the formula in the **order the dice were first chosen** (it used to sort by size), so "first die chosen" is really the first one. The d4 shows its number at the face centre, not at the vertex like a real one.
 - Original note follows.
 
 - Already in the Backlog (user request 2026-10-14). `Die3D` + `d20geometry.ts` project a real icosahedron to SVG each frame, no library.
 - Add the solids: tetrahedron (d4), cube (d6), octahedron (d8), pentagonal trapezohedron (d10 and d100), dodecahedron (d12). Several kinds in one roll: the animation uses the **first dice term of the formula**; the number of dice still shows in the result. d100 is shown as one d10 solid (the result strip already shows the two parts).
 - **Difficulty**: M (geometry, "which face is up" per solid, label placement on triangles vs pentagons vs kites). **Depends on**: nothing. **Risks**: low; keep reduced motion, the no-tumble-on-load rule and the natural-20 face logic; unit tests for each solid (face count, vertices on the unit sphere, face normals). The d4 shows its number at the vertex up, so use the "top reading" convention for it.
 
-### [x] I4. Level-up: raise HP and choose the hit die (code done 2026-10-14, visual check pending)
+### [x] I4. Level-up: raise HP and choose the hit die (done and checked in the browser 2026-10-14)
 
 - **Done**: `ClassEntry` gained `hitDie` (0 = SRD die for the class name, Italian or English; d8 if unknown) and `hitDiceUsed`. **No character version bump**: the fields live inside the nested sheet and `sanitizeSheet` defaults them, so old documents and exports load unchanged (tested). Domain in `src/domain/sheet/hitDice.ts` (+ tests); store actions `levelUp` and `spendHitDie`; UI `HitDiceCard` on the Scheda page (spend a die: rolls die + CON through the dice module, so it shows in the roll strip and history, and heals; «Sali di livello» form with roll / fixed value / typed value, die choice, preview of the gain) and a hit die select per class in edit mode. Long rest regains half the total dice (min 1, biggest first); short rest recovers none (SRD).
-- **Decisions**: gain = die value + CON modifier, at least 1 (SRD); max and current HP both grow by it; a later CON change is **not** retroactive (the «Ricalcola dal COS» button is not built: add it if wanted). The manual level field in edit mode still changes the level without touching HP. Level-up is not offered on the Tiri page. Typecheck, lint, 172 tests, build pass; not checked in a browser.
+- **Decisions**: gain = die value + CON modifier, at least 1 (SRD); max and current HP both grow by it; a later CON change is **not** retroactive (the «Ricalcola dal COS» button is not built: add it if wanted). The manual level field in edit mode still changes the level without touching HP. Level-up is not offered on the Tiri page. Typecheck, lint, 172 tests, build pass; level-up and spending checked in the browser. Spending is disabled at full HP.
 - Original note follows.
 
 - On level-up (or when a class level is added) the user picks per level: **roll the hit die**, **take the average** (SRD: ½ die + 1), or **type a value**; CON modifier is added; the class's hit die can be set (free choice, default from the SRD class table). Max HP and current HP grow by the same amount. A change of CON modifier later is not retroactive unless the user asks (button «Ricalcola dal COS»).

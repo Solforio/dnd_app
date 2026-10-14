@@ -14,6 +14,7 @@ import {
 } from './characterRepo';
 import { getFirebase } from './firebase';
 import { loadLocal, saveLocal } from './localStore';
+import { deleteCloudPortraits, deleteLocalPortraits } from './portraitRepo';
 
 /**
  * Decides where characters live. Logged out: this browser (localStorage).
@@ -157,6 +158,8 @@ function deleteNow(id: string) {
   const fb = getFirebase();
   const user = useSession.getState().user;
   if (!fb || !user) return;
+  // The pictures go with the character; a failure here leaves at most an orphan document.
+  void deleteCloudPortraits(fb.db, user.uid, id).catch(() => {});
   useSession.setState((s) => ({ inFlight: s.inFlight + 1 }));
   deleteCharacter(fb.db, user.uid, id)
     .then(() => useSession.setState((s) => ({ inFlight: s.inFlight - 1 })))
@@ -177,6 +180,7 @@ useCharacterStore.subscribe((s, prev) => {
   const phase = useSession.getState().phase;
   if (removed) useCharacterStore.setState({ removed: [] });
   if (phase === 'local') {
+    s.removed.forEach((id) => void deleteLocalPortraits(id));
     // The whole workspace is written, so removed characters simply disappear.
     if (localTimer !== undefined) clearTimeout(localTimer);
     localTimer = setTimeout(flushLocal, LOCAL_DEBOUNCE_MS);

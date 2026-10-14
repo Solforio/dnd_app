@@ -4,6 +4,7 @@ import { AbilitiesCard } from './AbilitiesCard';
 import { AttacksCard } from './AttacksCard';
 import { ConditionsCard } from './ConditionsCard';
 import { FeaturesCard } from './FeaturesCard';
+import { FigureCard } from './FigureCard';
 import { HitDiceCard } from './HitDiceCard';
 import { IdentityCard } from './IdentityCard';
 import { RollStrip } from './RollStrip';
@@ -26,6 +27,7 @@ export function SheetPage() {
       <div className="column">
         <AbilitiesCard editing={editing} />
         <SkillsCard editing={editing} />
+        <FigureCard />
       </div>
       <div className="column">
         <AttacksCard editing={editing} />

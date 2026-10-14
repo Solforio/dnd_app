@@ -76,6 +76,24 @@ service cloud.firestore {
         allow create, update: if isOwner(uid) && validCharacter(request.resource.data);
       }
 
+      // Character pictures: small base64 images, kept apart from the character document.
+      match /portraits/{characterId} {
+        function validImage(v, max) {
+          return v == null || (v is string && v.size() <= max && v.matches('data:image/(jpeg|png|webp);base64,.*'));
+        }
+
+        function validPortraits(data) {
+          return data.keys().hasOnly(['schemaVersion', 'portrait', 'body', 'updatedAt'])
+            && data.schemaVersion is int
+            && validImage(data.get('portrait', null), 60000)
+            && validImage(data.get('body', null), 220000)
+            && data.updatedAt is int;
+        }
+
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validPortraits(request.resource.data);
+      }
+
       // Private list of "my parties", so the app needs no collection-group query.
       match /memberships/{pid} {
         function validMembership(data) {

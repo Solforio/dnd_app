@@ -120,3 +120,29 @@ describe('everything else', () => {
     await assertFails(getDoc(doc(as('alice'), 'parties/p1'))); // no such party, and alice is not a member
   });
 });
+
+describe('users/{uid}/portraits/{id}', () => {
+  const tiny = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+  const pictures = { schemaVersion: 1, portrait: tiny, body: null, updatedAt: 1_700_000_000_000 };
+
+  it('lets the owner read, write and delete, and nobody else', async () => {
+    await assertSucceeds(setDoc(doc(as('alice'), 'users/alice/portraits/c1'), pictures));
+    await assertSucceeds(getDoc(doc(as('alice'), 'users/alice/portraits/c1')));
+    await assertFails(getDoc(doc(as('bob'), 'users/alice/portraits/c1')));
+    await assertFails(setDoc(doc(as('bob'), 'users/alice/portraits/c1'), pictures));
+    await assertSucceeds(deleteDoc(doc(as('alice'), 'users/alice/portraits/c1')));
+  });
+
+  it('accepts only image data URLs within the size limits', async () => {
+    const db = as('alice');
+    await assertFails(setDoc(doc(db, 'users/alice/portraits/c1'), { ...pictures, portrait: 'https://example.com/a.jpg' }));
+    await assertFails(setDoc(doc(db, 'users/alice/portraits/c1'), { ...pictures, portrait: 'data:text/html;base64,PGI+' }));
+    await assertFails(setDoc(doc(db, 'users/alice/portraits/c1'), { ...pictures, portrait: 'data:image/jpeg;base64,' + 'A'.repeat(60000) }));
+    await assertSucceeds(setDoc(doc(db, 'users/alice/portraits/c1'), { ...pictures, body: 'data:image/png;base64,' + 'A'.repeat(200000) }));
+    await assertFails(setDoc(doc(db, 'users/alice/portraits/c1'), { ...pictures, body: 'data:image/png;base64,' + 'A'.repeat(220000) }));
+  });
+
+  it('refuses unknown fields', async () => {
+    await assertFails(setDoc(doc(as('alice'), 'users/alice/portraits/c1'), { ...pictures, extra: 1 }));
+  });
+});

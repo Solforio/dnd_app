@@ -8,7 +8,10 @@ import { hitDieOf, HIT_DIE_OPTIONS } from '../../domain/sheet/hitDice';
 import { LEVEL_MAX } from '../../domain/sheet/rules';
 import { capacityLb, carriedWeightLb, encumbrance, speedPenaltyM } from '../../domain/inventory';
 import { formatNumber, formatSigned } from '../../domain/format/number';
+import { CharacterAvatar } from '../portrait/Avatar';
+import { PictureControls } from '../portrait/PictureControls';
 import { editSheet, rollFrom, useSheet } from './sheetHooks';
+import { usePortraitStore } from '../../data/portraitStore';
 
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -24,6 +27,8 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
   const name = useCharacterStore((s) => s.character.name);
   const hp = useCharacterStore((s) => s.character.hp);
   const rename = useCharacterStore((s) => s.rename);
+  const characterId = useCharacterStore((s) => s.character.id);
+  const hasPortrait = usePortraitStore((s) => !!s.byId[characterId]?.portrait);
   const s = useSheet();
   const init = initiative(s);
   const inventory = useCharacterStore((x) => x.character.inventory);
@@ -47,11 +52,14 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
   return (
     <section className="card stack span-all" aria-labelledby="sheet-name">
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2 id="sheet-name" style={{ margin: 0 }}>
-            {name || 'Senza nome'}
-          </h2>
-          <p className="small muted">{subtitle}</p>
+        <div className="identity-head">
+          <CharacterAvatar characterId={characterId} name={name} size={64} />
+          <div>
+            <h2 id="sheet-name" style={{ margin: 0 }}>
+              {name || 'Senza nome'}
+            </h2>
+            <p className="small muted">{subtitle}</p>
+          </div>
         </div>
         <button type="button" className={editing ? 'primary' : undefined} aria-pressed={editing} onClick={onToggleEdit}>
           {editing ? 'Fine modifiche' : 'Modifica la scheda'}
@@ -76,6 +84,7 @@ export function IdentityCard({ editing, onToggleEdit }: { editing: boolean; onTo
               onChange={(alignment) => editSheet((x) => ({ ...x, alignment }))}
             />
           </div>
+          <PictureControls characterId={characterId} kind="portrait" hasPicture={hasPortrait} />
           <fieldset className="plain stack">
             <legend className="label">Classi</legend>
             {s.classes.map((c, i) => {

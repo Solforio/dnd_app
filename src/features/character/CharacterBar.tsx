@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { useNavigate } from 'react-router';
 import { useCharacterStore } from '../../data/characterStore';
+import { CharacterAvatar } from '../portrait/Avatar';
 
 const MANAGE = '__manage__';
 
@@ -14,7 +15,8 @@ export function CharacterBar() {
 
   const all = [active, ...others].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   return (
-    <div className="field">
+    <div className="field header-character">
+      <CharacterAvatar characterId={active.id} name={active.name} size={32} />
       <label htmlFor={id} className="visually-hidden">
         Personaggio attivo
       </label>
