@@ -372,3 +372,113 @@ Order chosen by the user: 1) HP visible on phones (done), 2) 3D dice animation (
 
 - **Dice animation**: done: `Die3D` + `d20geometry.ts`, a real icosahedron projected into SVG each frame (no library), tumbles ~1,1 s and lands with the natural d20 face in front showing the total; none with reduced motion, and the roll already on screen at page load does not tumble.
 - **HP on phones**: done: `HpQuick`, sticky at the top of the Tiri page below 860 px, with quick damage and healing.
+
+# UX/UI review – D&D Pocket (2026-10-15)
+
+URL reviewed: https://solforio.github.io/dnd_app/ (hash routes: #/, #/scheda, #/combattimento, #/zaino, #/grimorio, #/bestiario, #/mappe, #/gruppo)
+
+## 0. Scope and method
+- Desktop (1568x773): Tiri, Scheda, Combattimento, Zaino, Mappe, with the default empty character ("Nuovo personaggio", level 1, all zeros).
+- Mobile: emulated by loading the site in iframes of 390x844, 375x667 and 360x640 px (width media queries apply; no real touch, no safe-area, no browser chrome). All 8 routes were checked at 390 px; Tiri also at 375 and 360 px.
+- Sizes, fonts and contrast were measured from the DOM (computed styles). Desktop-only observations from the first pass were judged by eye.
+- NOT verified: real device / touch behaviour, safe-area insets, landscape, light theme on mobile, a populated character (many items/spells/attacks), a spellcaster Grimorio, a monster detail in Bestiario, logged-in state of Gruppo, prefers-reduced-motion handling.
+
+## 1. Overall impression
+Strong, coherent fantasy identity (dark violet + gold, serif small caps, corner-bracket cards, per-tab accent colour and background hue). The hero die is the right focal point. Sticky HP/AC bar and the persistent roll-mode strip (Normale/Vantaggio/Svantaggio) are the right choices for use at the table. Main opportunities: make the roll screen unambiguous, fix the mobile layout (header weight, hidden tabs, horizontal overflow), and polish consistency and onboarding.
+
+## 2. What works well (keep)
+- Coherent, memorable visual identity; not a template look.
+- HP/AC bar visible on every tab; roll strip repeated on Scheda and Combattimento.
+- Saved rolls with real formulas (e.g. "Spada lunga: attacco 1d20+7") and free formulas (4d6kh3).
+- Useful empty states with CTAs ("Lo zaino è vuoto…", "Aggiungi oggetto"); Gruppo clearly explains it needs an account and offers "Accedi o registrati".
+- Zaino: kg/lb switch, capacity from Strength, weight bar.
+- Transparent storage status ("Solo su questo dispositivo") next to Accedi.
+- Existing accessibility basics (nothing to add): aria-live regions (4), aria-label on icon buttons ("Passa al tema pergamena", "Impostazioni"), aria-current="page" on tabs, 16 px inputs (no iOS zoom), light theme available.
+- Secondary text contrast is good (measured: tab labels 8,3:1, fold summaries 7,4:1, footer note 8,3:1). Die-face numerals are decorative.
+- Mobile: Scheda, Combattimento, Zaino, Mappe and Gruppo collapse cleanly to one column with no horizontal overflow; ability scores 3x2 grid and condition chips wrap well; Bestiario cards are dense but clear (GS, type, size, AC, HP; "334 mostri" counter).
+
+## 3. Findings and tasks
+
+### Phase 1 – Dice roll screen (Tiri) 🔴
+- [x] (done 2026-10-15: the die drawn is the first die of the chosen formula, the result block is labelled «Ultimo tiro»; checked with 1d12+1d4) Two formulas are shown at once ("Tocca il dado per lanciare 1d20" above, "1d12+1d4" below); the die drawn is a d12 while the hint says 1d20; the big number is the previous result. Show ONE active formula; label the previous result ("Ultimo tiro"); make the drawn die match the die that will be rolled.
+- [ ] Result with breakdown (e.g. "8 + 2"); nat 20 gold glow and nat 1 red tint (d20 only; for advantage/disadvantage evaluate the kept die).
+- [x] (done 2026-10-15: Storico is now under the die in the left column; tray, free formula, saved rolls and Gestione PF in the right one; history still shows 5, not 3) Move "Storico" next to/under the die. Desktop: right column is mostly empty while Vassoio dei dadi and Formula libera sit below the fold on the left; move them to the right column. Mobile order: die -> mode -> last 3 history -> tray.
+- [x] (done 2026-10-15: 4 columns = 4+3, count badge on each die, a hint line, − buttons 40 px; no long-press reset) Dice tray: orphan d100 (6+1 on desktop, 3+3+1 on mobile). Use 4+3 / 4 columns. Unclear affordance for adding dice (only "-" and a small "×1"): show visible +/- or a counter badge; long-press resets. The "-" buttons are 32 px high on mobile (x7).
+- [ ] Saved rolls: the × button is tiny and deletes without confirmation -> 44x44 hit area + undo toast.
+- [ ] Collapsed cards ("Gestione PF", "Formula libera"): truncated subtitle ("riposo …"), tiny chevron (15x21), empty strip under the header -> shorter subtitle, larger chevron, no extra height when collapsed.
+
+### Phase 2 – Mobile layout, navigation, HP bar 🔴
+- [x] (done 2026-10-15: `.fold > *` and the fold button get `min-width:0`; scrollWidth equals clientWidth on /, /scheda, /bestiario, /gruppo at 360/375/390) BUG: horizontal overflow on Tiri. The `.fold-head` / `.fold-summary` of the collapsible card ("Gestione PF") is 467 px wide in a 371 px viewport; the document scrolls sideways (scrollWidth 499 vs clientWidth 371; reproduced at 341, 356, 371 px). Fix with `min-width:0`, ellipsis or hiding the summary under ~480 px. Acceptance: scrollWidth === clientWidth on every route at 360/375/390.
+- [x] (done 2026-10-15, CSS only in `extras.css`: header 207 → 57 px, strip 146 → 89 px, die fully visible at 360x640; strip not yet at 72 px (two rows); no "⋯" menu, the sync text became a dot with a tooltip, the username is hidden under 600 px) Mobile chrome is too tall: header 207 px + tab nav 56 px + sticky vital strip 146 px = 409 px before content. At 360x640 and 375x667 the hero die is cut in half on first load (the sticky strip alone is 23% of a 640 px screen). Make the header a single row (logo + character select + "⋯" menu with theme, settings, storage status, Accedi); compact sticky strip ≤ ~72 px (name + PF text + bar on one line; amount input + Danno/Cura + CA on the second). Target: die and formula fully visible on first load at 360x640.
+- [x] (minimum version done 2026-10-15: active tab scrolled into view, labels 12 px, fade at both edges; the bottom nav is not built) Tabs: 8 tabs, nav scrollWidth 589 vs 371 visible, so Bestiario, Mappe and Gruppo are hidden; the active tab is NOT scrolled into view (scrollLeft stays 0 even when Bestiario/Mappe/Gruppo is active); no scroll hint; labels are 10,9 px. Preferred: bottom nav (Tiri, Scheda, Combattimento, Zaino + "Altro" sheet with Grimorio, Bestiario, Mappe, Gruppo), safe-area aware. Minimum: scrollIntoView({inline:"center"}) on route change, edge fade, labels ≥ 12 px.
+- [ ] HP controls: Danno/Cura are `disabled` (opacity 0,45) while the amount field is 0, so they look permanently inactive -> add placeholder "Valore" and quick buttons -1, -5, +1, +5.
+- [ ] HP bar colour by threshold: green > 50%, yellow 25-50%, red < 25% (keep the "x/y PF" text; never rely on colour alone).
+
+### Phase 3 – Text size, tap targets, readability 🟡
+- [ ] Tab labels 10,9 px -> ≥ 12 px; labels 13-14 px; body 16 px; nothing below 12 px (other than decorative elements).
+- [ ] Placeholder colour (#757575 on dark inputs, ≈ 3,9:1) -> ≥ 4,5:1.
+- [ ] Tap targets to 44x44 hit area (padding is enough; most are 36-40 px, above the WCAG 2.2 AA minimum of 24 px, so this is polish): header icons 36x36, fold chevron 15x21, preset/saved-roll chips (37 px), saved-roll ×, characteristic chips in Combattimento (65x36), "-" buttons (32 px).
+- [ ] Long grey help paragraphs (Mappe, Combattimento, Grimorio, Bestiario intro) -> one short line + "?" tooltip/disclosure.
+- [ ] Verify prefers-reduced-motion disables the dotted ring and roll animation (not verified).
+
+### Phase 4 – Consistency 🟢
+- [ ] One primary-button style (height, radius, fill, hover/active) for "Lancia", "Inizia combattimento", "Aggiungi oggetto", "Scegli le immagini"; per-tab accent only for titles, borders, background tint.
+- [ ] One content max-width rule; document the exception for single-column pages (Mappe is a narrow centred column on desktop while Tiri/Scheda/Combattimento use wide two-column layouts).
+
+### Phase 5 – Onboarding, data safety, page-specific polish 🟡
+- [ ] First run: guided setup (name, class, level, ability scores) or at least a primary "Crea il tuo personaggio" CTA in empty states instead of the secondary "Modifica la scheda".
+- [ ] Replace the footer note repeated on every page ("I dati restano su questo dispositivo…") with a dismissible backup banner (first use + every 14 days) with an "Esporta backup" button. Data lives only on the device: loss risk is the biggest.
+- [ ] Bestiario: native list bullets show outside the monster cards (reset `list-style`); 334 cards in a long scroll -> consider sticky search, remembered filters, jump by letter or windowing.
+- [ ] Grimorio: "Nessuna classe incantatrice riconosciuta" appears twice in consecutive cards and the Slot card has a large empty gap -> single empty state with CTA to Scheda; shorten instructions.
+- [ ] Gruppo: fine; only the repeated footer note (see the backup banner above).
+
+## 4. Priority order
+1. Fix the horizontal overflow on Tiri (bug, small change).
+2. Compact mobile header + sticky strip so the die is visible on first load.
+3. Tabs reachability on mobile (bottom nav or scrollIntoView + fade + larger labels).
+4. Unambiguous roll screen (single formula, matching die, breakdown, nat 20/1, history next to the die, tray grid).
+5. Text sizes, placeholder contrast, tap targets.
+6. Consistency (buttons, widths), then onboarding and backup banner, then Grimorio/Bestiario polish.
+
+
+# Code review – D&D Pocket (2026-10-15)
+
+Scope: whole repository (222 tracked files, ~20k lines of TS/TSX), main at 47309bd. Method: read of `firestore.rules`, `.github/workflows/deploy.yml`, `src/data/*`, `src/domain/sync.ts`, `src/App.tsx`, build output; typecheck, lint, 273 tests and `vite build` all run clean. Not covered: line-by-line read of every feature component, real-device behaviour.
+
+## Strengths (keep)
+- **Layering**: `domain/` (pure rules, no React or Firebase), `data/` (stores and repos), `features/` (UI). Rules like dice, HP, rests, spell slots, loot, trades are testable and tested (27 test files, 273 tests, ~3.7 s).
+- **Quality gate in CI**: typecheck, lint, unit tests, Firestore rules tests on the emulator, then build, and only then deploy. Strict TS, no `any`, one single `eslint-disable`.
+- **Firestore rules are serious**: `hasOnly` key whitelists, size limits, immutable fields (`createdAt`, `username`, `joinCode`), atomic batches checked with `getAfter/existsAfter`, one-shot treasure claim, per-user trade visibility, DM-only reads for the master view.
+- **Data safety**: schema versioning (`migrate.ts`, `sanitize.ts`), unreadable documents kept and written back untouched, debounced writer with injected clock, explicit upload plan that never overwrites by itself (`planUpload`).
+- **Security hygiene**: no `dangerouslySetInnerHTML`/`eval`, no secrets committed (the web API key is public by design), copyrighted map images git-ignored.
+- **Offline-first and cost-aware** (Spark plan, no Functions, no Storage): images chunked in Firestore, join codes instead of invites, comments on read costs of rules.
+- **Documentation**: PROGRESS.md records decisions and the reasons for them.
+
+## Weaknesses and risks
+1. **Bundle size / no code splitting** (build output): main chunk 1,218 kB (364 kB gzip), `fontkit` 711 kB. `App.tsx` imports every page statically (no `React.lazy`). Vite also warns `INEFFECTIVE_DYNAMIC_IMPORT`: `pdf-lib` is imported statically by `src/pdf/draw.ts`, so the "lazy" PDF export does not move it out of the main chunk for everything that touches `draw.ts`. Slow first load on mobile data.
+2. **Errors are swallowed**: 51 bare `catch {}` (e.g. `lootStore.ts` ×6, `bestiaryStore.ts` ×4, `partyStore.ts` ×3, `imageStore.ts` ×3, `localStore.ts` ×3). Some are right (localStorage unavailable), but in the party/loot/bestiary stores a failed write is invisible to the user and to `SyncStatus`.
+3. **Test gap on the layer that breaks most**: the 27 test files cover `domain/` and `pdf/`; `data/` (`session.ts` 314 lines, `partyRepo.ts` 521, `partyStore.ts` 474, `characterStore.ts`) and all of `features/` have no unit tests (only dice geometry). No end-to-end test of login → sync → party flows.
+4. **Multi-device conflicts**: characters are saved whole, keyed by `updatedAt` (last write wins). Two devices editing the same character offline can silently lose changes. To verify in `session.ts`/`characterRepo.ts` before deciding on a fix.
+5. **Firestore rules are not deployed by CI**: `deploy.yml` publishes only GitHub Pages. Rules tested in CI can differ from the ones live in Firebase (drift), and a rules change needs a manual `firebase deploy --only firestore:rules`.
+6. **Rule gaps (low severity, quota/abuse rather than leaks)**:
+   - `masterview.character is map`, `trades.item is map`, `treasure.items is list` have no content/size bound beyond the 1 MiB document cap; `validCharacter` checks only `id`, `schemaVersion`, `name`, `updatedAt`.
+   - `log` and `pins` `delete` do not require `isMember(pid)`: a member who left can still delete their own old entries (harmless, but inconsistent with the rest).
+   - Many `get()/exists()` per request count as document reads on Spark (the file already notes it); `isMember` is evaluated on every read of every party subcollection.
+   - The public API key has no App Check or HTTP-referrer restriction mentioned anywhere.
+7. **Accounts without recovery**: synthetic email `username@dnd.local`, min 6-char password, so no password reset. Forgotten password = account (and cloud copy) lost. Combined with local-only data for logged-out users, data loss is the top product risk (already in the UX review as the backup banner).
+8. **Large modules**: `partyRepo.ts` (521), `partyStore.ts` (474), `domain/party.ts` (439), `MapPage.tsx` (346) mix several concerns (members, treasure, trades, quests, log, maps). Fine today, costly when Phase 5 (notes) lands.
+9. **Hygiene**: package still named `dnd-companion`, version `0.0.0`; `cowork-prompt-dnd-app.md` and a long chronological PROGRESS.md (440+ lines, partly in English, partly Italian UI strings) make the entry point hard to read; `react-hooks/exhaustive-deps` disabled in `MapPage.tsx:55`; user-facing strings are hard-coded Italian (no i18n layer, fine if Italian-only is a decision, but it should be written down).
+
+## Possible changes (proposed, nothing applied yet)
+Priority: P1 = do soon, P2 = next, P3 = when convenient.
+
+- [ ] **P1 Code splitting**: `React.lazy` + `Suspense` for pages other than Tiri/Scheda (Mappe, Gruppo, Bestiario, Grimorio, Impostazioni); make `draw.ts` get `pdf-lib` only through the dynamic import (or move PDF code into one lazy entry) so `exportPdf`/`fontkit` leave the main chunk. Goal: main chunk < 500 kB. Check with `vite build`.
+- [ ] **P1 Stop swallowing write errors** in `lootStore`, `bestiaryStore`, `partyStore`, `imageStore`: route failures to a shared error/`SyncStatus` path (toast or badge) and keep `catch {}` only for storage-unavailable cases, each with a one-line comment saying why.
+- [ ] **P1 Backup banner + "Esporta tutto"** reminder (from the UX review, item 5) and a documented recovery story for forgotten passwords (e.g. export before sign-up prompt, or an optional real email field with Firebase password reset).
+- [ ] **P1 Deploy rules from CI**: add a job (on `main`, after `test:rules`) running `firebase deploy --only firestore:rules,firestore:indexes` with a `FIREBASE_TOKEN`/service-account secret; or at least a documented manual step in README.
+- [ ] **P2 Tests for the data layer**: `session.ts` (login/logout, flush, upload plan), `partyRepo` batches (against the emulator, like the rules tests), `characterStore` actions (`levelUp`, rests, `addImported`). Then a few Playwright smoke tests (roll a die, create character, export PDF).
+- [ ] **P2 Conflict handling for characters**: compare `updatedAt` on write (transaction or `serverTimestamp` check) and show "modified on another device: keep mine / take theirs" instead of silent overwrite. Decide after verifying point 4.
+- [ ] **P2 Tighten rules**: size caps for `masterview.character`, `trades.item`, `treasure.items[*]`; `isMember(pid)` on `log`/`pins` delete; consider App Check or at least restrict the API key by HTTP referrer in Google Cloud. Add a rules test for each change.
+- [ ] **P2 Split the party layer**: `partyRepo.ts`/`partyStore.ts` into `party/members`, `party/loot` (treasure + trades), `party/story` (quests + log), `party/maps`, before Phase 5 adds notes.
+- [ ] **P3 Cleanup**: rename package to `dnd-pocket` (keep the `dnd-companion:local` localStorage key, renaming it would orphan saved data); move `cowork-prompt-dnd-app.md` to `docs/`; split PROGRESS.md into "current status / next steps" (top) and an archive of decisions; remove or justify the `exhaustive-deps` disable in `MapPage.tsx`.
+- [ ] **P3 i18n decision**: write down that the UI is Italian-only, or extract strings to a dictionary before adding a second language.

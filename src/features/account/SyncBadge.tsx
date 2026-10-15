@@ -18,7 +18,7 @@ export function SyncBadge() {
     error: s.writeError !== null,
   });
   return (
-    <span className={`sync-badge ${status}`} role="status" aria-live="polite" title={s.writeError ?? undefined}>
+    <span className={`sync-badge ${status}`} role="status" aria-live="polite" title={s.writeError ?? TEXT[status]}>
       <span className="dot" aria-hidden="true" />
       {TEXT[status]}
     </span>

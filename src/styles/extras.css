@@ -271,3 +271,142 @@ html[data-theme='parchment'] .die-stage::before {
 html[data-theme='parchment'] .tray-die .add .die-icon {
   color: var(--accent-deep);
 }
+
+/* --- Phone chrome: one header row and a two-row vital strip, so the die is visible on first load --- */
+
+@media (max-width: 600px) {
+  .app-header {
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* The die icon stays as the logo; the name is in the page title and the footer. */
+  .app-header h1 {
+    flex: none;
+    font-size: 0;
+  }
+
+  .header-character {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .header-select {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 1rem;
+  }
+
+  .account-bar {
+    flex: none;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .account-bar .username {
+    display: none;
+  }
+
+  /* Only the coloured dot: the text is still read by screen readers and shown as a tooltip. */
+  .sync-badge {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .vital-strip {
+    padding: var(--space-1) var(--space-3);
+  }
+
+  .vital-main {
+    gap: var(--space-1) var(--space-3);
+  }
+
+  /* Name and badges on the first row (the basis keeps the HP bar on the second); the name gets an ellipsis. */
+  .vital-who {
+    flex: 1 1 70%;
+    min-width: 0;
+    order: 1;
+  }
+
+  .vital-who > div {
+    min-width: 0;
+  }
+
+  .vital-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vital-badges {
+    order: 2;
+  }
+
+  .vital-hp {
+    flex: 1 1 90px;
+    min-width: 90px;
+    order: 3;
+  }
+
+  .vital-quick {
+    flex: 0 0 auto;
+    order: 4;
+  }
+
+  .vital-quick input {
+    flex: none;
+    width: 3.4em;
+  }
+
+  .vital-quick button {
+    min-height: 36px;
+    padding-inline: var(--space-3);
+  }
+
+  .vital-class {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* --- Roll screen: the tray in 4 + 3 columns, a count badge on each die, the last result labelled --- */
+
+.tray {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tray-die {
+  position: relative;
+}
+
+.tray-die .count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 1.6em;
+  margin: 0;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--bg);
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.tray-die .remove {
+  min-height: 40px;
+}
+
+.result-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

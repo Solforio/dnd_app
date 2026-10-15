@@ -1,7 +1,6 @@
-import type { ReactNode } from 'react';
-import type { MouseEvent } from 'react';
+import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
-import { NavLink, useNavigate } from 'react-router';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 import { useCharacterStore } from '../data/characterStore';
 
 /** Small line icons, one per section, drawn on a 24-pixel grid in the text colour. */
@@ -62,6 +61,13 @@ const TABS = [
 export function TabNav() {
   const inCombat = useCharacterStore((s) => s.character.sheet.combat.active);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const nav = useRef<HTMLElement>(null);
+
+  // On a narrow screen the tab bar scrolls: keep the current section in view, also after a deep link.
+  useEffect(() => {
+    nav.current?.querySelector('.tab.active')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [pathname]);
 
   /** Changes page inside a view transition (a fade and slide) when the browser can. */
   const go = (e: MouseEvent<HTMLAnchorElement>, to: string) => {
@@ -73,7 +79,7 @@ export function TabNav() {
     });
   };
   return (
-    <nav className="tabs" aria-label="Sezioni">
+    <nav ref={nav} className="tabs" aria-label="Sezioni">
       {TABS.map((t) => (
         <NavLink key={t.to} to={t.to} end={t.end} className="tab" onClick={(e) => go(e, t.to)}>
           <svg className="tab-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">

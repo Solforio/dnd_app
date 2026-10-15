@@ -2023,11 +2023,18 @@ button.link {
 }
 
 /* Foldable cards and compact lists */
+/* The nowrap summary must not widen the card's single grid column on narrow screens. */
+.fold > * {
+  min-width: 0;
+}
+
 .fold-head {
   margin: 0;
 }
 
 .fold-head button {
+  box-sizing: border-box;
+  min-width: 0;
   display: flex;
   align-items: baseline;
   gap: var(--space-3);

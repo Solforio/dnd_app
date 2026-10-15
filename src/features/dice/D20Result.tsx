@@ -12,6 +12,12 @@ function shownSides(roll: RollRecord | undefined): number {
   return roll?.terms.find((t) => t.dice.length > 0)?.dice[0]!.sides ?? 20;
 }
 
+/** The die that the next tap will roll: the first dice term of the chosen formula. */
+function nextSides(formula: string): number | undefined {
+  const m = /d(\d+)/.exec(formula);
+  return m ? Number(m[1]) : undefined;
+}
+
 /** The natural roll of the drawn die, when exactly one of that kind was kept: its face ends up in front. */
 function naturalRoll(roll: RollRecord, sides: number): number | undefined {
   if (sides === 100) return undefined;
@@ -44,7 +50,9 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
   const chosen = trayFormula(tray);
   const rollChosen = useCharacterStore((s) => s.roll);
   const text = roll ? formatNumber(roll.total) : '–';
-  const sides = shownSides(roll);
+  // The die drawn is the one the next tap rolls; the number on it is the last total.
+  const sides = nextSides(chosen) ?? shownSides(roll);
+  const lastSides = roll ? shownSides(roll) : undefined;
   const state = roll?.crit ? ' crit' : roll?.fumble ? ' fumble' : '';
   const modeText = roll && roll.mode !== 'normal' ? MODE_LABEL[roll.mode] : '';
   const announcement = roll
@@ -59,7 +67,7 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
           rollId={roll?.id}
           text={text}
           sides={sides}
-          natural={roll ? naturalRoll(roll, sides) : undefined}
+          natural={roll && lastSides === sides ? naturalRoll(roll, sides) : undefined}
           className={state}
           label={roll ? `Risultato ${text}` : 'Nessun tiro ancora'}
           onRoll={chosen ? () => rollChosen(chosen) : undefined}
@@ -80,6 +88,7 @@ export function D20Result({ roll }: { roll: RollRecord | undefined }) {
       {roll ? (
         <>
           <p className="result-line">
+            <span className="result-kicker">Ultimo tiro</span>
             {roll.label && <span className="muted">{roll.label} · </span>}
             {roll.formula}
             {modeText && <span className="result-tag">{modeText}</span>}

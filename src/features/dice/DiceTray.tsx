@@ -20,6 +20,7 @@ export function DiceTray() {
   return (
     <section className="card stack" aria-labelledby="tray-title">
       <h2 id="tray-title">Vassoio dei dadi</h2>
+      <p className="small muted">Tocca un dado per aggiungerlo, il − sotto per toglierlo.</p>
       <div className="tray">
         {TRAY_DICE.map((s) => (
           <div className="tray-die" key={s}>
