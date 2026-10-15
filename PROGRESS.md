@@ -351,6 +351,29 @@ Status: nothing started yet (only registered).
 
 On Scheda and Combattimento the last-roll card (total, formula, Normale / Vantaggio / Svantaggio) now sticks right under the vital strip. It had `position: sticky; top: 0` but sat inside the page grid (a sticky grid item can only move inside its own row) and under the vital strip. Now `RollStrip` renders a `roll-strip-wrap` before the `<main>`, and `VitalStrip` publishes its height as `--vital-h` (ResizeObserver) for the offset. On a 390 px phone the two together take about 186 px.
 
+## Owner's requests of 2026-10-15 (evening)
+
+- The Combattimento tab is called **«Combat»** (the label overflowed its box on a phone; the page title too). The route stays `/combattimento`.
+- Tiri: **Storico shows 3 rolls** (was 5) and sits **under the Vassoio dei dadi** (right column; on a phone: die, tray, history).
+- **The Gruppo tab opens the party used last** (`src/data/lastParty.ts`, key `dnd-companion:last-party`): remembered when a party page has loaded, forgotten when the party is left, deleted or gone. Only when signed in; the «← I miei gruppi» link and the URL `#/gruppo` still show the list.
+- **Swipe between sections** (`src/components/swipe.ts`, used by `TabNav`): a quick sideways swipe (at least 80 px, clearly more horizontal than vertical, under 0.7 s) goes to the next or previous section in the tab order Tiri, Scheda, Combat, Zaino, Grimorio, Bestiario, Mappe, Gruppo. It is ignored when it starts on a field, a map, a dialog or a sideways-scrolling element, when a dialog is open, and on pages that are not a section root (a map, settings, characters). Checked with synthetic touch events (left, right, diagonal, on a field); not tried on a real phone. No animation of the page following the finger.
+
+## PWA: thinking (2026-10-15), nothing built yet
+
+**What exists**: a static site on GitHub Pages under `/dnd_app/` (`VITE_BASE` from the workflow), `HashRouter` (no server-side routing to worry about), Firestore with a persistent local cache (own data already works offline once loaded), an IndexedDB store for map images and portraits, `navigator.storage.persist()` in Settings, `viewport-fit=cover` and `theme-color`. **Missing**: web manifest, PNG icons, service worker, install prompt. Build: main chunk 1,2 MB (366 kB gzip), `exportPdf` 403 kB and `fontkit` 711 kB lazy, `public/srd/monsters.json` 451 kB and `spells.json` 360 kB fetched when their tab opens.
+
+**Plan, in order (each step usable on its own)**
+1. **Manifest and icons** (S, no dependency): `manifest.webmanifest` with `name` «D&D Pocket», `short_name`, `start_url` and `scope` `./` (so it works under `/dnd_app/`), `display: standalone`, `theme_color` and `background_color` `#1b1a2e`, icons 192 and 512 plus a maskable one and an `apple-touch-icon` 180, all drawn from `favicon.svg` (gold d20 on indigo). The PNGs need a one-off render (a script with a dev dependency such as `sharp`, or by hand from the browser).
+2. **Service worker** (M): precache the built shell (HTML, hashed JS and CSS, fonts, the lazy chunks including the PDF ones, so «Esporta tutto» works offline); `public/srd/*.json` stale-while-revalidate; **never** touch Firestore and Auth traffic (the Firebase SDK manages those). Two ways: (A) `vite-plugin-pwa` (Workbox: generates the precache list, handles updates; a dev dependency to check against Vite 8) or (B) a hand-written `sw.js` with a tiny Vite plugin that lists the files (no dependency, about 80 lines, more upkeep). I lean towards A.
+3. **Updates**: a notice «Nuova versione disponibile · Aggiorna» instead of reloading by itself, so nobody loses a typed note mid-edit; the SW checks on page open and on focus.
+4. **Install and iOS** (S): `beforeinstallprompt` button on Android/desktop (in Settings and, once, as a hint), a short how-to for iOS («Condividi → Aggiungi alla schermata Home»), and the iOS meta tags (`apple-mobile-web-app-capable`, status bar style). iOS clears site data after about 7 days without use unless the app is on the home screen, which is the real reason to install; `storage.persist()` helps on Android/desktop only.
+5. **Offline pass** (S): airplane-mode test of every tab (dice, sheet, backpack, spells, bestiary list, own maps, PDF export); what cannot work offline says so (sign-in, joining a party, party data not yet loaded). The sync badge already says «Offline».
+6. Then the Faerûn bulk import (I1), which only makes sense once the shell is offline.
+
+**Risks**: a stale SW after a deploy (hence step 3 and hashed file names); the SW scope has to be `/dnd_app/` and registration must use `import.meta.env.BASE_URL`; the SRD JSON needs revalidation or a version in its name; dev mode has no SW (test with `vite preview`); GitHub Pages cache headers are fixed; bigger CI artefact.
+
+**Decisions needed from the owner**: (a) may I add `vite-plugin-pwa` (and a dev dependency to render the PNG icons)? (b) are the icons OK as the gold d20 on indigo of the favicon? (c) update by notice (recommended) or silently on next launch?
+
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.

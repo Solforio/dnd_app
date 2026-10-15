@@ -14,7 +14,7 @@ export function TurnCard() {
   if (!combat.active) {
     return (
       <section className="card stack span-all" aria-labelledby="turn-title">
-        <h2 id="turn-title">Combattimento</h2>
+        <h2 id="turn-title">Combat</h2>
         <Hint short="Tutto quello che serve nello scontro, in una pagina.">
           Qui trovi in una pagina quello che serve nello scontro: PF, condizioni, attacchi, tiri salvati e incantesimi. Con «Inizia
           combattimento» parte il conteggio dei round e gli effetti degli incantesimi si contano da soli.

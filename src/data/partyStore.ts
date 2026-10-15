@@ -19,6 +19,7 @@ import {
 } from '../domain/party';
 import { useCharacterStore } from './characterStore';
 import { getFirebase } from './firebase';
+import { forgetLastParty } from './lastParty';
 import { ensurePortraits, usePortraitStore } from './portraitStore';
 import { buildMasterView, masterViewKey } from '../domain/masterView';
 import * as repo from './partyRepo';
@@ -188,6 +189,7 @@ function forgetLocally(pid: string) {
   if (usePartyStore.getState().openId === pid) closeParty();
   lastSent.delete(pid);
   lastMaster.delete(pid);
+  forgetLastParty(pid);
   setMemberships((list) => list.filter((m) => m.partyId !== pid));
 }
 

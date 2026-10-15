@@ -45,10 +45,10 @@ function Home() {
           <D20Result roll={lastRoll} />
           <ModeSelector value={rollMode} onChange={setRollMode} />
         </section>
-        <History />
       </div>
       <div className="column">
         <DiceTray />
+        <History />
         <FormulaRoller />
         <Presets />
         <HpManage />

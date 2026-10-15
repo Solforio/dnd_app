@@ -15,7 +15,7 @@ function when(at: number): string {
   return today ? timeFormat.format(d) : `${dayFormat.format(d)}, ${timeFormat.format(d)}`;
 }
 
-const RECENT = 5;
+const RECENT = 3;
 
 export function History() {
   const history = useCharacterStore((s) => s.character.history);

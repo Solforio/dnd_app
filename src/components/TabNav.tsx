@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 import { useCharacterStore } from '../data/characterStore';
+import { lastParty } from '../data/lastParty';
+import { useSession } from '../data/session';
+import { watchSwipes } from './swipe';
 
 /** Small line icons, one per section, drawn on a 24-pixel grid in the text colour. */
 const ICONS: Record<string, ReactNode> = {
@@ -56,7 +59,7 @@ const ICONS: Record<string, ReactNode> = {
 const TABS = [
   { to: '/', label: 'Tiri', icon: 'dice', end: true },
   { to: '/scheda', label: 'Scheda', icon: 'scroll', end: true },
-  { to: '/combattimento', label: 'Combattimento', icon: 'swords', end: true },
+  { to: '/combattimento', label: 'Combat', icon: 'swords', end: true },
   { to: '/zaino', label: 'Zaino', icon: 'satchel', end: true },
   { to: '/grimorio', label: 'Grimorio', icon: 'book', end: true },
   { to: '/bestiario', label: 'Bestiario', icon: 'skull', end: true },
@@ -109,15 +112,48 @@ export function TabNav() {
     nav.current?.querySelector('.tab.active')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }, [pathname]);
 
+  const signedIn = useSession((s) => s.phase === 'cloud');
+
+  /** Where a section opens: the Gruppo tab goes straight to the party used last (when signed in). */
+  const target = useCallback(
+    (to: string): string => {
+      const pid = to === '/gruppo' && signedIn ? lastParty() : null;
+      return pid ? `/gruppo/${pid}` : to;
+    },
+    [signedIn],
+  );
+
   /** Changes page inside a view transition (a fade and slide) when the browser can. */
+  const open = useCallback(
+    (to: string) => {
+      const dest = target(to);
+      if (!document.startViewTransition) {
+        navigate(dest);
+        return;
+      }
+      document.startViewTransition(() => {
+        flushSync(() => navigate(dest));
+      });
+    },
+    [target, navigate],
+  );
+
   const go = (e: MouseEvent<HTMLAnchorElement>, to: string) => {
     const plain = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
-    if (!plain || !document.startViewTransition) return;
+    if (!plain) return;
     e.preventDefault();
-    document.startViewTransition(() => {
-      flushSync(() => navigate(to));
-    });
+    open(to);
   };
+
+  // Swiping sideways on a section page moves to the next or the previous section (not from a map or a settings page).
+  const here = TABS.findIndex((t) => (t.to === '/gruppo' ? pathname.startsWith('/gruppo') : pathname === t.to));
+  useEffect(() => {
+    if (here < 0) return;
+    return watchSwipes((step) => {
+      const next = TABS[here + step];
+      if (next) open(next.to);
+    });
+  }, [here, open]);
   const link = (t: (typeof TABS)[number]) => (
     <NavLink key={t.to} to={t.to} end={t.end} className="tab" onClick={(e) => go(e, t.to)}>
       <TabIcon name={t.icon} />

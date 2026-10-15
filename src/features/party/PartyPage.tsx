@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { forgetLastParty, rememberParty } from '../../data/lastParty';
 import { closeParty, deleteParty, forgetParty, openParty, usePartyStore } from '../../data/partyStore';
 import { useSession } from '../../data/session';
 import { PartyBestiary } from '../bestiary/PartyBestiary';
@@ -78,6 +79,13 @@ export function PartyPage() {
     openParty(partyId);
     return closeParty;
   }, [partyId, phase]);
+
+  // The Gruppo tab reopens the party seen last; a party that is gone is forgotten.
+  const openedId = party?.id;
+  useEffect(() => {
+    if (status === 'gone') forgetLastParty(partyId);
+    else if (openedId === partyId) rememberParty(partyId);
+  }, [status, openedId, partyId]);
 
   // Treasure and trades of this party, listened to only while the page is open.
   useEffect(() => {
