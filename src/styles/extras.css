@@ -357,12 +357,11 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
 
   .vital-quick input {
     flex: none;
-    width: 3.4em;
   }
 
   .vital-quick button {
     min-height: 36px;
-    padding-inline: var(--space-3);
+    padding-inline: var(--space-2);
   }
 
   .vital-class {
@@ -409,4 +408,217 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* --- Roll screen and HP controls, second part --- */
+
+.hp-bar .cur.mid {
+  background: linear-gradient(180deg, #f3d37a, #c08a1c);
+}
+
+/* Damage and healing: the amount field says what it wants, the buttons look usable, ±1 and ±5 skip the typing. */
+.vital-quick input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.vital-quick button:disabled {
+  opacity: 0.65;
+}
+
+.vital-steps {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.vital-steps button {
+  min-width: 40px;
+  min-height: 36px;
+  padding-inline: var(--space-2);
+}
+
+@media (max-width: 600px) {
+  /* The strip stays at two rows on a phone, so the ±1 and ±5 steps are only shown on wider screens. */
+  .vital-steps {
+    display: none;
+  }
+
+}
+
+.vital-quick input {
+  width: 5em;
+}
+
+@media (max-width: 600px) {
+  .vital-quick input {
+    width: 4.8em;
+  }
+}
+
+/* Saved rolls: a 44 px target for the cross, and the undo line. */
+.preset-chip .ghost {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.preset-chip .roll-preset {
+  min-height: 44px;
+}
+
+.undo-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+/* Foldable cards: a chevron you can see. */
+.fold-chevron {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* --- The last roll and the d20 mode stay in view under the vital strip (Scheda, Combattimento) --- */
+
+.app-main.sheet .roll-strip {
+  top: var(--vital-h, 0px);
+  z-index: 4;
+  background: var(--surface);
+}
+
+@media (max-width: 600px) {
+  .roll-strip {
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+  }
+
+  .strip-total {
+    font-size: 1.6rem;
+  }
+}
+
+/* --- Phone: the sections move to a bar at the bottom, thumb height; the rest is behind «Altro» --- */
+
+.bottom-nav-wrap {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .tabs {
+    display: none;
+  }
+
+  .bottom-nav-wrap {
+    display: block;
+  }
+
+  body {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bottom-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.08), transparent), var(--surface);
+    border-top: 1px solid rgb(var(--accent-rgb) / 0.45);
+    view-transition-name: app-bottom-nav;
+  }
+
+  .bottom-nav .tab,
+  .more-sheet .tab {
+    min-height: 56px;
+    margin: 0;
+    padding: 0 2px;
+    border-bottom: 0;
+    border-top: 2px solid transparent;
+    border-radius: 0;
+    justify-content: center;
+    position: relative;
+  }
+
+  .bottom-nav .tab.active {
+    border-top-color: var(--accent);
+    box-shadow: none;
+  }
+
+  /* The «Altro» button is a button: take the button look off. */
+  .bottom-nav button.tab {
+    background: none;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    box-shadow: none;
+    color: var(--muted);
+    font-family: var(--font-display);
+  }
+
+  .bottom-nav button.tab.active {
+    color: var(--accent-bright);
+  }
+
+  .bottom-nav .tab-live {
+    position: absolute;
+    top: 8px;
+    right: calc(50% - 20px);
+    margin: 0;
+  }
+
+  .more-sheet {
+    position: fixed;
+    right: var(--space-2);
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    z-index: 31;
+    display: grid;
+    min-width: 200px;
+    padding: var(--space-1);
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 0.55);
+  }
+
+  .more-sheet .tab {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    min-height: 48px;
+    padding: 0 var(--space-4);
+    border-top: 0;
+    font-size: 0.9rem;
+  }
+
+  .more-sheet .tab.active {
+    border-left: 2px solid var(--accent);
+  }
+
+  /* The footer and the map controls must clear the bar. */
+  .app-footer {
+    margin-bottom: 0;
+  }
+}
+
+/* The roll strip lives outside the page grid so that it can stick under the vital strip. */
+.roll-strip-wrap {
+  position: sticky;
+  top: var(--vital-h, 0px);
+  z-index: 4;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-4) 0;
+  background: var(--bg);
+}
+
+.roll-strip-wrap .roll-strip {
+  position: static;
+}
+
+@media (max-width: 600px) {
+  .roll-strip-wrap {
+    padding: var(--space-1) var(--space-3) 0;
+  }
 }

@@ -5,6 +5,8 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -418,7 +420,7 @@ describe('the party bestiary', () => {
     creatureType: '',
     place: 'Strada per Phandalin',
     notes: '',
-    revealed: ['ac'],
+    revealed: [],
     custom: { ac: null, hp: '', speed: '' },
     createdBy: uid,
     createdByName: uid,
@@ -449,20 +451,32 @@ describe('the party bestiary', () => {
     const db = as('bob');
     await assertFails(setDoc(doc(db, path('e1')), entry('bob', { name: '' })));
     await assertFails(setDoc(doc(db, path('e1')), entry('bob', { notes: 'x'.repeat(2001) })));
-    await assertFails(setDoc(doc(db, path('e1')), entry('bob', { revealed: Array(15).fill('ac') })));
+    await assertFails(setDoc(doc(as('alice'), path('e1')), entry('alice', { revealed: Array(15).fill('ac') })));
     await assertFails(setDoc(doc(db, path('e1')), entry('bob', { extra: 1 })));
     await assertSucceeds(setDoc(doc(db, path('e1')), entry('bob', { srdId: null, creatureType: 'Drago di fiamma' })));
   });
 
-  it('lets any member fill in notes and what is known, but not rename it or change its author', async () => {
+  it('lets any member fill in notes, but only the DM reveal what is known; nobody renames it or changes its author', async () => {
     await seedParty();
     await assertSucceeds(setDoc(doc(as('bob'), path('e1')), entry('bob')));
     const alice = as('alice');
-    await assertSucceeds(updateDoc(doc(alice, path('e1')), { notes: 'Odiano la luce', revealed: ['ac', 'hp'], updatedAt: T + 1 }));
+    const bob = as('bob');
+    await assertSucceeds(updateDoc(doc(bob, path('e1')), { notes: 'Odiano la luce', updatedAt: T + 1 }));
+    await assertSucceeds(updateDoc(doc(alice, path('e1')), { revealed: ['ac', 'hp'], updatedAt: T + 2 }));
+    await assertSucceeds(updateDoc(doc(alice, path('e1')), { revealed: arrayRemove('hp'), updatedAt: T + 3 }));
+    await assertFails(updateDoc(doc(bob, path('e1')), { revealed: ['ac', 'speed'], updatedAt: T + 4 }));
+    await assertFails(updateDoc(doc(bob, path('e1')), { revealed: arrayUnion('speed'), updatedAt: T + 4 }));
+    await assertFails(updateDoc(doc(bob, path('e1')), { revealed: [], updatedAt: T + 4 }));
     await assertFails(updateDoc(doc(alice, path('e1')), { name: 'Altro' }));
     await assertFails(updateDoc(doc(alice, path('e1')), { srdId: 'orc' }));
     await assertFails(updateDoc(doc(alice, path('e1')), { createdBy: 'alice' }));
     await assertFails(updateDoc(doc(as('eve'), path('e1')), { notes: 'intruso' }));
+  });
+
+  it('is created with nothing revealed by a player; the DM may create it already revealed', async () => {
+    await seedParty();
+    await assertFails(setDoc(doc(as('bob'), path('e1')), entry('bob', { revealed: ['ac'] })));
+    await assertSucceeds(setDoc(doc(as('alice'), path('e2')), entry('alice', { revealed: ['ac'] })));
   });
 
   it('is deleted by its author or by the DM, not by another player', async () => {

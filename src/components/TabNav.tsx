@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 import { useCharacterStore } from '../data/characterStore';
@@ -44,6 +44,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M4 21h4" />
     </>
   ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+    </>
+  ),
 };
 
 const TABS = [
@@ -58,11 +65,44 @@ const TABS = [
   { to: '/gruppo', label: 'Gruppo', icon: 'banner', end: false },
 ] as const;
 
+/** On a phone the bar sits at the bottom with the four sections used most; the others are behind «Altro». */
+const MAIN_TABS = TABS.filter((t) => ['/', '/scheda', '/combattimento', '/zaino'].includes(t.to));
+const MORE_TABS = TABS.filter((t) => !MAIN_TABS.includes(t));
+
+function TabIcon({ name }: { name: string }) {
+  return (
+    <svg className="tab-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      {ICONS[name]}
+    </svg>
+  );
+}
+
 export function TabNav() {
   const inCombat = useCharacterStore((s) => s.character.sheet.combat.active);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const nav = useRef<HTMLElement>(null);
+  // The sheet is open for the page it was opened on, so a page change closes it without an effect.
+  const [openAt, setOpenAt] = useState<string | null>(null);
+  const moreOpen = openAt === pathname;
+  const setMoreOpen = (open: boolean) => setOpenAt(open ? pathname : null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const moreActive = MORE_TABS.some((t) => (t.end ? pathname === t.to : pathname.startsWith(t.to)));
+
+  // The «Altro» sheet also closes on Escape and on a tap outside it.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpenAt(null);
+    const onDown = (e: PointerEvent) => {
+      if (!moreRef.current?.contains(e.target as Node)) setOpenAt(null);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+    };
+  }, [moreOpen]);
 
   // On a narrow screen the tab bar scrolls: keep the current section in view, also after a deep link.
   useEffect(() => {
@@ -78,17 +118,39 @@ export function TabNav() {
       flushSync(() => navigate(to));
     });
   };
+  const link = (t: (typeof TABS)[number]) => (
+    <NavLink key={t.to} to={t.to} end={t.end} className="tab" onClick={(e) => go(e, t.to)}>
+      <TabIcon name={t.icon} />
+      <span>{t.label}</span>
+      {t.to === '/combattimento' && inCombat && <span className="tab-live" role="img" aria-label="in corso" />}
+    </NavLink>
+  );
+
   return (
-    <nav ref={nav} className="tabs" aria-label="Sezioni">
-      {TABS.map((t) => (
-        <NavLink key={t.to} to={t.to} end={t.end} className="tab" onClick={(e) => go(e, t.to)}>
-          <svg className="tab-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-            {ICONS[t.icon]}
-          </svg>
-          <span>{t.label}</span>
-          {t.to === '/combattimento' && inCombat && <span className="tab-live" role="img" aria-label="in corso" />}
-        </NavLink>
-      ))}
-    </nav>
+    <>
+      <nav ref={nav} className="tabs" aria-label="Sezioni">
+        {TABS.map(link)}
+      </nav>
+      <div ref={moreRef} className="bottom-nav-wrap">
+        {moreOpen && (
+          <div id="more-sheet" className="more-sheet" role="group" aria-label="Altre sezioni">
+            {MORE_TABS.map(link)}
+          </div>
+        )}
+        <nav className="bottom-nav" aria-label="Sezioni">
+          {MAIN_TABS.map(link)}
+          <button
+            type="button"
+            className={`tab more-tab${moreActive ? ' active' : ''}`}
+            aria-expanded={moreOpen}
+            aria-controls="more-sheet"
+            onClick={() => setMoreOpen(!moreOpen)}
+          >
+            <TabIcon name="more" />
+            <span>Altro</span>
+          </button>
+        </nav>
+      </div>
+    </>
   );
 }

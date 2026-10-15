@@ -12,35 +12,38 @@ export function RollStrip() {
   const state = roll?.crit ? ' crit' : roll?.fumble ? ' fumble' : '';
   const modeText = roll && roll.mode !== 'normal' ? MODE_LABEL[roll.mode] : '';
 
+  // The wrapper is what sticks: a sticky item inside the page grid could only move within its own row.
   return (
-    <section className="card roll-strip" aria-label="Ultimo tiro">
-      <div className="roll-strip-result">
-        <span key={roll?.id ?? 'none'} className={`strip-total${state}${roll ? ' pop' : ''}`} aria-hidden="true">
-          {roll ? formatNumber(roll.total) : '–'}
-        </span>
-        <div className="strip-detail">
-          {roll ? (
-            <>
-              <p className="small">
-                <strong>{roll.label ?? 'Tiro'}</strong> <span className="muted">{roll.formula}</span>
-                {modeText && <span className="result-tag">{modeText}</span>}
-                {roll.crit && <span className="result-tag crit">Critico</span>}
-                {roll.fumble && <span className="result-tag fumble">Fallimento critico</span>}
-              </p>
-              <RollBreakdown terms={roll.terms} />
-            </>
-          ) : (
-            <p className="small muted">Tocca un valore della scheda per tirarlo.</p>
-          )}
+    <div className="roll-strip-wrap">
+      <section className="card roll-strip" aria-label="Ultimo tiro">
+        <div className="roll-strip-result">
+          <span key={roll?.id ?? 'none'} className={`strip-total${state}${roll ? ' pop' : ''}`} aria-hidden="true">
+            {roll ? formatNumber(roll.total) : '–'}
+          </span>
+          <div className="strip-detail">
+            {roll ? (
+              <>
+                <p className="small">
+                  <strong>{roll.label ?? 'Tiro'}</strong> <span className="muted">{roll.formula}</span>
+                  {modeText && <span className="result-tag">{modeText}</span>}
+                  {roll.crit && <span className="result-tag crit">Critico</span>}
+                  {roll.fumble && <span className="result-tag fumble">Fallimento critico</span>}
+                </p>
+                <RollBreakdown terms={roll.terms} />
+              </>
+            ) : (
+              <p className="small muted">Tocca un valore della scheda per tirarlo.</p>
+            )}
+          </div>
         </div>
-      </div>
-      <ModeSelector value={rollMode} onChange={setRollMode} />
-      <p className="visually-hidden" aria-live="polite" aria-atomic="true">
-        {roll
-          ? `${roll.label ?? 'Tiro'}: totale ${formatNumber(roll.total)}.` +
-            (roll.crit ? ' Critico!' : roll.fumble ? ' Fallimento critico.' : '')
-          : ''}
-      </p>
-    </section>
+        <ModeSelector value={rollMode} onChange={setRollMode} />
+        <p className="visually-hidden" aria-live="polite" aria-atomic="true">
+          {roll
+            ? `${roll.label ?? 'Tiro'}: totale ${formatNumber(roll.total)}.` +
+              (roll.crit ? ' Critico!' : roll.fumble ? ' Fallimento critico.' : '')
+            : ''}
+        </p>
+      </section>
+    </div>
   );
 }

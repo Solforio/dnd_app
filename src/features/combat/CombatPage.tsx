@@ -16,19 +16,21 @@ import { TurnCard } from './TurnCard';
 export function CombatPage() {
   useEffect(() => ensureSpellCatalogue(), []);
   return (
-    <main className="app-main sheet">
+    <>
       <RollStrip />
-      <TurnCard />
-      <KeyStats />
-      <div className="column">
-        <ConditionsCard />
-        <EffectsCard />
-      </div>
-      <div className="column">
-        <AttacksCard editing={false} />
-        <SavedRolls />
-        <CombatSpells />
-      </div>
-    </main>
+      <main className="app-main sheet">
+        <TurnCard />
+        <KeyStats />
+        <div className="column">
+          <ConditionsCard />
+          <EffectsCard />
+        </div>
+        <div className="column">
+          <AttacksCard editing={false} />
+          <SavedRolls />
+          <CombatSpells />
+        </div>
+      </main>
+    </>
   );
 }

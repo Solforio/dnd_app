@@ -44,7 +44,7 @@ function CustomBlock({ entry }: { entry: BestiaryEntry }) {
 }
 
 /** One creature in detail: what the party has learned, the stat block it allows, notes, and deleting. */
-function EntryDialog({ pid, entry, monster, canDelete, onClose }: { pid: string; entry: BestiaryEntry; monster: Monster | undefined; canDelete: boolean; onClose: () => void }) {
+function EntryDialog({ pid, entry, monster, canDelete, isDm, onClose }: { pid: string; entry: BestiaryEntry; monster: Monster | undefined; canDelete: boolean; isDm: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [place, setPlace] = useState(entry.place);
   const [notes, setNotes] = useState(entry.notes);
@@ -98,11 +98,11 @@ function EntryDialog({ pid, entry, monster, canDelete, onClose }: { pid: string;
         </p>
 
         <fieldset className="plain stack">
-          <legend className="label">Cosa sa il gruppo (segna quello che il DM vi ha detto)</legend>
+          <legend className="label">{isDm ? 'Cosa sa il gruppo (decidi tu cosa rivelare)' : 'Cosa sa il gruppo (lo rivela il DM)'}</legend>
           <div className="reveal-grid">
             {sections.map((s) => (
               <label key={s} className="inline">
-                <input type="checkbox" checked={entry.revealed.includes(s)} onChange={() => void setBestiaryReveal(pid, entry.id, s, !entry.revealed.includes(s)).then((err) => err && setMessage(err))} />
+                <input type="checkbox" checked={entry.revealed.includes(s)} disabled={!isDm} onChange={() => void setBestiaryReveal(pid, entry.id, s, !entry.revealed.includes(s)).then((err) => err && setMessage(err))} />
                 {REVEAL_LABELS[s]}
               </label>
             ))}
@@ -280,7 +280,7 @@ export function PartyBestiary({ pid, uid, isDm }: { pid: string; uid: string; is
         })}
       </ul>
 
-      {open && <EntryDialog key={open.id} pid={pid} entry={open} monster={open.srdId ? byId.get(open.srdId) : undefined} canDelete={open.createdBy === uid || isDm} onClose={() => setOpenId(null)} />}
+      {open && <EntryDialog key={open.id} pid={pid} entry={open} monster={open.srdId ? byId.get(open.srdId) : undefined} canDelete={open.createdBy === uid || isDm} isDm={isDm} onClose={() => setOpenId(null)} />}
     </FoldCard>
   );
 }

@@ -414,7 +414,8 @@ service cloud.firestore {
       }
 
       // The party's bestiary: creatures met in the campaign and what the group has learned about them.
-      // Every member adds and fills it in; the author or the DM deletes an entry.
+      // Every member adds creatures and writes the notes; only the DM reveals what the group knows (`revealed`);
+      // the author or the DM deletes an entry.
       match /bestiary/{entryId} {
         function validEntry(data) {
           return data.keys().hasOnly([
@@ -437,10 +438,12 @@ service cloud.firestore {
         allow read: if isMember(pid);
         allow create: if isMember(pid)
           && validEntry(request.resource.data)
-          && request.resource.data.createdBy == request.auth.uid;
-        // Name, SRD monster and author never change; the rest is for every member to fill in.
+          && request.resource.data.createdBy == request.auth.uid
+          && (request.resource.data.revealed.size() == 0 || isPartyOwner(pid));
+        // Name, SRD monster and author never change; notes and place are for every member, what is revealed only for the DM.
         allow update: if isMember(pid)
           && validEntry(request.resource.data)
+          && (request.resource.data.revealed == resource.data.revealed || isPartyOwner(pid))
           && request.resource.data.name == resource.data.name
           && request.resource.data.srdId == resource.data.srdId
           && request.resource.data.createdBy == resource.data.createdBy

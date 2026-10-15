@@ -30,7 +30,9 @@
 ::view-transition-old(app-tabs),
 ::view-transition-new(app-tabs),
 ::view-transition-old(app-vitals),
-::view-transition-new(app-vitals) {
+::view-transition-new(app-vitals),
+::view-transition-old(app-bottom-nav),
+::view-transition-new(app-bottom-nav) {
   animation: none;
   mix-blend-mode: normal;
 }
