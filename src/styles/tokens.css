@@ -6,6 +6,9 @@
   --line: #5e4d3c;
   --text: #f1e8d4;
   --muted: #b9ad96;
+  /* Content widths: the sections use the wide one; single-column list pages (Mappe, Bestiario, Personaggi, Impostazioni, the group list) the narrow one. */
+  --content-max: 1100px;
+  --content-narrow: 820px;
   --gold: #e0b04a;
   --gold-bright: #f3cf78;
   --gold-deep: #b68a2c;

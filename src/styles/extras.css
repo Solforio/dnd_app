@@ -606,7 +606,7 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
   position: sticky;
   top: var(--vital-h, 0px);
   z-index: 4;
-  max-width: 1100px;
+  max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--space-2) var(--space-4) 0;
   background: var(--bg);
@@ -703,4 +703,28 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
   .gear-link {
     min-height: 36px;
   }
+}
+
+/*
+ * One primary button everywhere: the same gold, whatever the section's accent colour. The accent tints titles,
+ * borders and the page background, not the call to action.
+ */
+button.primary {
+  min-height: 44px;
+  padding-inline: var(--space-4);
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-deep));
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 0 14px rgb(224 176 74 / 0.35),
+    inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+button.primary:hover:not(:disabled) {
+  box-shadow:
+    0 0 20px rgb(224 176 74 / 0.55),
+    inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+html[data-theme='parchment'] button.primary {
+  background: linear-gradient(180deg, #f2cc70, #c8932a);
 }
