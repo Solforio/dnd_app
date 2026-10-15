@@ -360,7 +360,6 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
   }
 
   .vital-quick button {
-    min-height: 36px;
     padding-inline: var(--space-2);
   }
 
@@ -611,6 +610,8 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
   margin: 0 auto;
   padding: var(--space-2) var(--space-4) 0;
   background: var(--bg);
+  /* The pop of a new total scales past the card for a moment; clip it, a clip does not break `sticky`. */
+  overflow-x: clip;
 }
 
 .roll-strip-wrap .roll-strip {
@@ -620,5 +621,86 @@ html[data-theme='parchment'] .tray-die .add .die-icon {
 @media (max-width: 600px) {
   .roll-strip-wrap {
     padding: var(--space-1) var(--space-3) 0;
+  }
+}
+
+/* --- Phase 3: readable placeholders, 44 px targets, short help lines --- */
+
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.chip {
+  min-height: 44px;
+}
+
+.tray-die .remove,
+.fold-head button {
+  min-height: 44px;
+}
+
+/* The header round buttons keep their look and get a 44 px hit area. */
+.theme-toggle,
+.gear-link {
+  position: relative;
+}
+
+.theme-toggle::after,
+.gear-link::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
+.hint {
+  margin: 0;
+}
+
+.hint-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  min-height: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.hint-btn::after {
+  content: '';
+  position: absolute;
+  inset: -11px;
+}
+
+.hint-detail {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid rgb(var(--accent-rgb) / 0.6);
+  background: rgb(0 0 0 / 0.18);
+}
+
+/* Fingers: on touch screens and on a phone width every control is at least 44 px tall. */
+@media (pointer: coarse), (max-width: 700px) {
+  button,
+  select,
+  input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+    min-height: 44px;
+  }
+
+  .button-link,
+  .check-btn,
+  .stat-link {
+    min-height: 44px;
+  }
+
+  .theme-toggle,
+  .gear-link {
+    min-height: 36px;
   }
 }

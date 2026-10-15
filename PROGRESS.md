@@ -419,11 +419,11 @@ Strong, coherent fantasy identity (dark violet + gold, serif small caps, corner-
 - [x] (done 2026-10-15: `mid` class ≤ 50%, `low` ≤ 25%; only in the vital strip, party cards unchanged) HP bar colour by threshold: green > 50%, yellow 25-50%, red < 25% (keep the "x/y PF" text; never rely on colour alone).
 
 ### Phase 3 – Text size, tap targets, readability 🟡
-- [ ] Tab labels 10,9 px -> ≥ 12 px; labels 13-14 px; body 16 px; nothing below 12 px (other than decorative elements).
-- [ ] Placeholder colour (#757575 on dark inputs, ≈ 3,9:1) -> ≥ 4,5:1.
-- [ ] Tap targets to 44x44 hit area (padding is enough; most are 36-40 px, above the WCAG 2.2 AA minimum of 24 px, so this is polish): header icons 36x36, fold chevron 15x21, preset/saved-roll chips (37 px), saved-roll ×, characteristic chips in Combattimento (65x36), "-" buttons (32 px).
-- [ ] Long grey help paragraphs (Mappe, Combattimento, Grimorio, Bestiario intro) -> one short line + "?" tooltip/disclosure.
-- [ ] Verify prefers-reduced-motion disables the dotted ring and roll animation (not verified).
+- [x] (done 2026-10-15: no visible text under 12 px on the eight routes; the logo name and the sync text are hidden on phones on purpose) Tab labels 10,9 px -> ≥ 12 px; labels 13-14 px; body 16 px; nothing below 12 px (other than decorative elements).
+- [x] (done 2026-10-15: `::placeholder` uses `--muted`, measured rgb(185,173,150) on the dark inputs) Placeholder colour (#757575 on dark inputs, ≈ 3,9:1) -> ≥ 4,5:1.
+- [x] (done 2026-10-15: on touch screens and up to 700 px every button, select, input and link-button is at least 44 px tall; the two round header buttons stay 36 px with a 44 px hit area; inline text links are left alone; the vital strip grew from 89 to 93 px and the header from 57 to 61) Tap targets to 44x44 hit area (padding is enough; most are 36-40 px, above the WCAG 2.2 AA minimum of 24 px, so this is polish): header icons 36x36, fold chevron 15x21, preset/saved-roll chips (37 px), saved-roll ×, characteristic chips in Combattimento (65x36), "-" buttons (32 px).
+- [x] (done 2026-10-15 with a `Hint` component: one short line and a «?» that opens the text; on Mappe, Combattimento, Grimorio, Bestiario) Long grey help paragraphs (Mappe, Combattimento, Grimorio, Bestiario intro) -> one short line + "?" tooltip/disclosure.
+- [ ] (not applicable: the owner asked for animations always on, see «Animations forced on») Verify prefers-reduced-motion disables the dotted ring and roll animation (not verified).
 
 ### Phase 4 – Consistency 🟢
 - [ ] One primary-button style (height, radius, fill, hover/active) for "Lancia", "Inizia combattimento", "Aggiungi oggetto", "Scegli le immagini"; per-tab accent only for titles, borders, background tint.

@@ -1,3 +1,4 @@
+import { Hint } from '../../components/Hint';
 import { useEffect, useState } from 'react';
 import { ensureSpellCatalogue } from '../../data/spellCatalogue';
 import { spellClassOf } from '../../domain/spells';
@@ -42,10 +43,10 @@ export function GrimoirePage() {
       {casters.map((c, i) => (
         <ClassSpellsCard key={`${c.name}-${i}`} c={c} editing={editing} />
       ))}
-      <p className="small muted">
+      <Hint short="Incantesimi dell’SRD 5.1, in inglese.">
         Gli incantesimi vengono dal System Reference Document 5.1 (CC-BY 4.0) e sono in inglese: sono solo quelli dell’SRD, non tutti
         quelli dei manuali.
-      </p>
+      </Hint>
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { Hint } from '../../components/Hint';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { ensureMonsterCatalogue, useMonsterCatalogue } from '../../data/monsterCatalogue';
 import { useMonsterDialog } from '../../data/monsterDialog';
@@ -38,10 +39,10 @@ export function BestiaryPage() {
     <main className="app-main single">
       <section className="card stack" aria-labelledby="bestiary-title">
         <h2 id="bestiary-title">Bestiario</h2>
-        <p className="small muted">
+        <Hint short={`${monsters.length > 0 ? formatNumber(monsters.length) : 'Oltre trecento'} mostri dell’SRD 5.1, in inglese.`}>
           Tutti i mostri del System Reference Document 5.1: sono {monsters.length > 0 ? formatNumber(monsters.length) : 'oltre trecento'}, in
           inglese. Il bestiario che il gruppo compila durante la campagna è nella pagina del gruppo.
-        </p>
+        </Hint>
 
         <div className="row filters">
           <div className="field grow">

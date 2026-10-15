@@ -1,3 +1,4 @@
+import { Hint } from '../../components/Hint';
 import { useState } from 'react';
 import { formatNumber } from '../../domain/format/number';
 import { endCombat, endTurn, startCombat } from '../../domain/sheet/combat';
@@ -14,10 +15,10 @@ export function TurnCard() {
     return (
       <section className="card stack span-all" aria-labelledby="turn-title">
         <h2 id="turn-title">Combattimento</h2>
-        <p className="small muted">
+        <Hint short="Tutto quello che serve nello scontro, in una pagina.">
           Qui trovi in una pagina quello che serve nello scontro: PF, condizioni, attacchi, tiri salvati e incantesimi. Con «Inizia
           combattimento» parte il conteggio dei round e gli effetti degli incantesimi si contano da soli.
-        </p>
+        </Hint>
         <div>
           <button
             type="button"

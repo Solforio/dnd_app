@@ -1,3 +1,4 @@
+import { Hint } from '../../components/Hint';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { TextField } from '../../components/TextField';
@@ -161,12 +162,12 @@ export function MapsPage() {
 
       <section className="card stack" aria-labelledby="maps-title">
         <h2 id="maps-title">{pid ? 'Mappe del gruppo' : 'Le mie mappe'}</h2>
-        <p className="small muted">
+        <Hint short={pid ? 'Le crea il DM; tutti aggiungono segnalini.' : 'Solo tu le vedi.'}>
           {pid
             ? 'Le crea il DM; tutti i membri vedono e aggiungono segnalini. Ognuno carica l’immagine sul proprio dispositivo: il DM può mandarvi lo stesso file.'
             : 'Solo tu le vedi. I segnalini si salvano sul tuo account (o in questo browser se non hai accesso).'}{' '}
           Le immagini restano su questo dispositivo e non vengono mai inviate a internet.
-        </p>
+        </Hint>
         {maps === null || maps === undefined ? (
           <p className="muted" role="status">
             Carico le mappe…
