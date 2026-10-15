@@ -7,6 +7,7 @@ import { FeaturesCard } from './FeaturesCard';
 import { FigureCard } from './FigureCard';
 import { HitDiceCard } from './HitDiceCard';
 import { IdentityCard } from './IdentityCard';
+import { FirstRunCard } from '../onboarding/FirstRunCard';
 import { RollStrip } from './RollStrip';
 import { SkillsCard } from './SkillsCard';
 import { TraitsCard } from './TraitsCard';
@@ -24,6 +25,7 @@ export function SheetPage() {
     <>
       <RollStrip />
       <main className="app-main sheet">
+        <FirstRunCard />
         <IdentityCard editing={editing} onToggleEdit={() => setEditing((e) => !e)} />
         <div className="column">
           <AbilitiesCard editing={editing} />

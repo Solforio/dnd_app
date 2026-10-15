@@ -728,3 +728,41 @@ button.primary:hover:not(:disabled) {
 html[data-theme='parchment'] button.primary {
   background: linear-gradient(180deg, #f2cc70, #c8932a);
 }
+
+/* --- First run --- */
+
+.app-main .span-all {
+  grid-column: 1 / -1;
+}
+
+.first-run-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--space-2);
+}
+
+/* Lists marked `plain` have no bullets, margin or padding (the catalogue, saved rolls, slots). */
+ul.plain,
+ol.plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* The search of the monster catalogue stays in view while the long list scrolls. */
+.search-bar {
+  position: sticky;
+  top: var(--vital-h, 0px);
+  z-index: 3;
+  padding: var(--space-2) 0;
+  background: var(--surface);
+}
+
+.search-bar input {
+  width: 100%;
+}
+
+/* First-run and backup cards sit above the page. */
+.backup-banner {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+}

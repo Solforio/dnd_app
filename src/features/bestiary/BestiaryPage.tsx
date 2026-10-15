@@ -1,6 +1,7 @@
 import { Hint } from '../../components/Hint';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { ensureMonsterCatalogue, useMonsterCatalogue } from '../../data/monsterCatalogue';
+import { loadFilter, saveFilter } from '../../data/bestiaryFilter';
 import { useMonsterDialog } from '../../data/monsterDialog';
 import { AddToParty } from './AddToParty';
 import {
@@ -23,7 +24,8 @@ const PAGE = 40;
 export function BestiaryPage() {
   const { monsters, status } = useMonsterCatalogue();
   const open = useMonsterDialog((s) => s.open);
-  const [filter, setFilter] = useState<MonsterFilter>(NO_FILTER);
+  // Remembered on this device: coming back from a stat block finds the same list.
+  const [filter, setFilter] = useState<MonsterFilter>(loadFilter);
   const [shown, setShown] = useState(PAGE);
   const ids = { q: useId(), type: useId(), size: useId(), min: useId(), max: useId() };
 
@@ -31,7 +33,9 @@ export function BestiaryPage() {
 
   const matches = useMemo(() => filterMonsters(monsters, filter), [monsters, filter]);
   const set = (patch: Partial<MonsterFilter>) => {
-    setFilter((f) => ({ ...f, ...patch }));
+    const next = { ...filter, ...patch };
+    setFilter(next);
+    saveFilter(next);
     setShown(PAGE);
   };
 
@@ -44,11 +48,14 @@ export function BestiaryPage() {
           inglese. Il bestiario che il gruppo compila durante la campagna è nella pagina del gruppo.
         </Hint>
 
+        <div className="search-bar">
+          <label htmlFor={ids.q} className="visually-hidden">
+            Cerca per nome
+          </label>
+          <input id={ids.q} type="search" value={filter.query} onChange={(e) => set({ query: e.target.value })} placeholder="Cerca per nome, per esempio Goblin" />
+        </div>
+
         <div className="row filters">
-          <div className="field grow">
-            <label htmlFor={ids.q}>Cerca per nome</label>
-            <input id={ids.q} type="search" value={filter.query} onChange={(e) => set({ query: e.target.value })} placeholder="Goblin" />
-          </div>
           <div className="field">
             <label htmlFor={ids.type}>Tipo</label>
             <select id={ids.type} value={filter.type} onChange={(e) => set({ type: e.target.value })}>
@@ -91,6 +98,11 @@ export function BestiaryPage() {
               ))}
             </select>
           </div>
+          {JSON.stringify(filter) !== JSON.stringify(NO_FILTER) && (
+            <button type="button" className="ghost" onClick={() => set(NO_FILTER)}>
+              Azzera i filtri
+            </button>
+          )}
         </div>
 
         {status === 'loading' && <p className="muted">Carico l’elenco dei mostri…</p>}

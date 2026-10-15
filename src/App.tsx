@@ -12,6 +12,8 @@ import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
 import { CharactersPage } from './features/character/CharactersPage';
 import { SpellDialog, SpellNotice } from './features/grimoire/SpellDialog';
+import { BackupBanner } from './features/backup/BackupBanner';
+import { FirstRunCard } from './features/onboarding/FirstRunCard';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { BestiaryPage } from './features/bestiary/BestiaryPage';
 import { MonsterDialog } from './features/bestiary/MonsterDialog';
@@ -40,6 +42,7 @@ function Home() {
 
   return (
     <main className="app-main">
+      <FirstRunCard />
       <div className="column">
         <section className="card stack" aria-label="Risultato">
           <D20Result roll={lastRoll} />
@@ -125,6 +128,7 @@ export function App() {
           {text}
         </p>
       ))}
+      {ready && <BackupBanner />}
       {ready ? (
         <Routes>
           <Route path="/accedi" element={<SignInPage />} />
@@ -153,9 +157,7 @@ export function App() {
       <MonsterDialog />
       <SpellNotice />
       <footer className="app-footer small muted">
-        {phase === 'cloud'
-          ? 'I dati sono salvati sul tuo account e su questo dispositivo.'
-          : 'I dati restano su questo dispositivo. Usa «Esporta» nella pagina Personaggi per un backup, o accedi per salvarli sull’account.'}
+        {phase === 'cloud' ? 'I dati sono salvati sul tuo account e su questo dispositivo.' : 'I dati restano su questo dispositivo.'}
       </footer>
     </>
   );

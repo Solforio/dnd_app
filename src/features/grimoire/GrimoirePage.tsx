@@ -1,5 +1,6 @@
 import { Hint } from '../../components/Hint';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { ensureSpellCatalogue } from '../../data/spellCatalogue';
 import { spellClassOf } from '../../domain/spells';
 import { editSheet, useSheet } from '../sheet/sheetHooks';
@@ -21,7 +22,7 @@ export function GrimoirePage() {
           {editing ? 'Fine modifiche' : 'Modifica'}
         </button>
       </div>
-      <SpellSlotsCard editing={editing} alwaysShow />
+      <SpellSlotsCard editing={editing} alwaysShow={casters.length > 0} />
       {editing && (
         <label className="inline">
           <input
@@ -32,12 +33,15 @@ export function GrimoirePage() {
           Ignora i limiti di incantesimi (talenti, oggetti magici, regole della casa)
         </label>
       )}
-      {casters.length === 0 && (
+      {casters.length === 0 && !editing && (
         <section className="card stack">
-          <p>
-            Nessuna classe incantatrice riconosciuta: scrivi la classe nella Scheda («Modifica la scheda»), per esempio Mago, Chierico
-            o Warlock.
-          </p>
+          <h2>Nessuna classe incantatrice</h2>
+          <p className="small muted">Scrivi una classe come Mago, Chierico o Warlock nella scheda per avere slot e incantesimi qui.</p>
+          <div>
+            <Link className="button-link" to="/scheda">
+              Vai alla scheda
+            </Link>
+          </div>
         </section>
       )}
       {casters.map((c, i) => (

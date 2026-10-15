@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useCharacterStore } from '../../data/characterStore';
-import { exportCharacter, importCharacter, type Character } from '../../domain/character';
+import { parseImport } from '../../domain/backup';
+import { exportCharacter, type Character } from '../../domain/character';
 import { formatNumber } from '../../domain/format/number';
 import { classSummary } from '../../domain/sheet/sheet';
 import { CHARACTER_LIMIT } from '../../domain/workspace';
+import { downloadBackup } from '../backup/downloadBackup';
 
 function fileName(name: string): string {
   const slug = name
@@ -34,13 +36,14 @@ export function CharactersPage() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [pendingImport, setPendingImport] = useState<Character | null>(null);
+  const [pendingImport, setPendingImport] = useState<Character[] | null>(null);
   const [message, setMessage] = useState('');
 
   // Stable alphabetical order: the active character is marked, not moved.
   const all = [active, ...others].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   const full = all.length >= CHARACTER_LIMIT;
-  const replacing = pendingImport ? all.find((c) => c.id === pendingImport.id) : undefined;
+  const replacing = pendingImport && pendingImport.length === 1 ? all.find((c) => c.id === pendingImport[0]!.id) : undefined;
+  const replacedCount = pendingImport ? pendingImport.filter((p) => all.some((c) => c.id === p.id)).length : 0;
 
   const report = (err: string | null, ok: string) => setMessage(err ?? ok);
 
@@ -51,8 +54,7 @@ export function CharactersPage() {
       return;
     }
     try {
-      const c = importCharacter(await file.text());
-      setPendingImport(c);
+      setPendingImport(parseImport(await file.text()).characters);
       setMessage('');
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Importazione non riuscita.');
@@ -61,7 +63,18 @@ export function CharactersPage() {
 
   const confirmImport = () => {
     if (!pendingImport) return;
-    report(addImported(pendingImport), `Importato «${pendingImport.name}»: ora è il personaggio attivo.`);
+    let error: string | null = null;
+    for (const c of pendingImport) {
+      error = addImported(c);
+      if (error) break;
+    }
+    const last = pendingImport[pendingImport.length - 1];
+    report(
+      error,
+      pendingImport.length === 1 && last
+        ? `Importato «${last.name}»: ora è il personaggio attivo.`
+        : `Importati ${formatNumber(pendingImport.length)} personaggi.`,
+    );
     setPendingImport(null);
   };
 
@@ -155,12 +168,14 @@ export function CharactersPage() {
         {pendingImport ? (
           <div className="row" role="group" aria-label="Conferma importazione">
             <span className="small">
-              {replacing
-                ? `Hai già «${replacing.name}»: sostituirlo con la versione del file «${pendingImport.name}»?`
-                : `Aggiungere «${pendingImport.name}» ai tuoi personaggi?`}
+              {pendingImport.length > 1
+                ? `Il file contiene ${formatNumber(pendingImport.length)} personaggi${replacedCount > 0 ? `; ${formatNumber(replacedCount)} di quelli che hai già verranno sostituiti` : ''}. Importarli?`
+                : replacing
+                  ? `Hai già «${replacing.name}»: sostituirlo con la versione del file «${pendingImport[0]!.name}»?`
+                  : `Aggiungere «${pendingImport[0]!.name}» ai tuoi personaggi?`}
             </span>
-            <button type="button" className={replacing ? 'danger' : 'primary'} autoFocus onClick={confirmImport}>
-              {replacing ? 'Sì, sostituisci' : 'Sì, aggiungi'}
+            <button type="button" className={replacedCount > 0 ? 'danger' : 'primary'} autoFocus onClick={confirmImport}>
+              {replacedCount > 0 ? 'Sì, sostituisci' : 'Sì, aggiungi'}
             </button>
             <button type="button" onClick={() => setPendingImport(null)}>
               Annulla
@@ -181,12 +196,21 @@ export function CharactersPage() {
             <button type="button" onClick={() => fileRef.current?.click()}>
               Importa da file
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                downloadBackup(all);
+                setMessage(`Backup di ${formatNumber(all.length)} personaggi scaricato.`);
+              }}
+            >
+              Esporta backup di tutti
+            </button>
             <input
               ref={fileRef}
               type="file"
               accept="application/json,.json"
               hidden
-              aria-label="File del personaggio da importare"
+              aria-label="File del personaggio o del backup da importare"
               onChange={(e) => {
                 void pick(e.target.files?.[0]);
                 e.target.value = '';

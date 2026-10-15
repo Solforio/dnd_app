@@ -10,6 +10,7 @@ import {
   revealableSections,
   REVEAL_SECTIONS,
   sanitizeEntry,
+  sanitizeFilter,
   sanitizeMonsterCatalogue,
   toggleReveal,
   typeKey,
@@ -133,5 +134,21 @@ describe('the party bestiary entries', () => {
     expect(entryNumber(entry({ srdId: catalogue[9]!.id }), catalogue)).toBe(10);
     expect(entryNumber(entry({ srdId: null }), catalogue)).toBeNull();
     expect(entryNumber(entry({ srdId: 'not-there' }), catalogue)).toBeNull();
+  });
+});
+
+describe('sanitizeFilter', () => {
+  it('keeps a valid filter', () => {
+    const f = { query: 'gob', type: 'humanoid', size: 'Small', crMin: 0.25, crMax: 5 };
+    expect(sanitizeFilter(f)).toEqual(f);
+  });
+
+  it('falls back field by field on anything unexpected', () => {
+    expect(sanitizeFilter(null)).toEqual(NO_FILTER);
+    expect(sanitizeFilter({ query: 5, type: 'nonsense', size: 'Colossal', crMin: 'a', crMax: 999 })).toEqual(NO_FILTER);
+  });
+
+  it('never lets the maximum challenge rating sit under the minimum', () => {
+    expect(sanitizeFilter({ crMin: 10, crMax: 2 }).crMax).toBe(10);
   });
 });

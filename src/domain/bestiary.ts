@@ -147,6 +147,21 @@ export interface MonsterFilter {
 
 export const NO_FILTER: MonsterFilter = { query: '', type: '', size: '', crMin: 0, crMax: 30 };
 
+/** A filter read back from storage: anything unexpected falls back to «no filter» for that field. */
+export function sanitizeFilter(raw: unknown): MonsterFilter {
+  const r = asRecord(raw);
+  const cr = (v: unknown, fallback: number) => (typeof v === 'number' && CR_STEPS.includes(v) ? v : fallback);
+  const crMin = cr(r.crMin, NO_FILTER.crMin);
+  const crMax = Math.max(crMin, cr(r.crMax, NO_FILTER.crMax));
+  return {
+    query: asString(r.query, 80),
+    type: typeof r.type === 'string' && r.type in TYPE_LABELS ? r.type : '',
+    size: typeof r.size === 'string' && (SIZES as readonly string[]).includes(r.size) ? r.size : '',
+    crMin,
+    crMax,
+  };
+}
+
 export function filterMonsters(list: readonly Monster[], f: MonsterFilter): Monster[] {
   const q = f.query.trim().toLowerCase();
   return list.filter(

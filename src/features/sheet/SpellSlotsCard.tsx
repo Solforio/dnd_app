@@ -52,8 +52,7 @@ export function SpellSlotsCard({ editing, alwaysShow = false }: { editing: boole
       <h2 id="slots-title">Slot incantesimo</h2>
       {rows.length === 0 && !pact && (
         <p className="small muted">
-          Nessuna classe incantatrice riconosciuta (mago, stregone, chierico, druido, bardo, paladino, ranger, warlock, Cavaliere Mistico,
-          Mistificatore Arcano). Puoi impostare gli slot a mano qui sotto.
+          Nessuna classe incantatrice riconosciuta: imposta gli slot a mano qui sotto.
         </p>
       )}
       <ul className="plain stack">
