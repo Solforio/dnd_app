@@ -5,6 +5,7 @@ import {
   newId,
   PRESET_LIMIT,
   type Character,
+  type Preset,
   type RollRecord,
 } from '../domain/character';
 import { rollFormula } from '../domain/dice/engine';
@@ -54,6 +55,8 @@ interface CharacterStore {
   clearHistory: () => void;
   addPreset: (name: string, formula: string) => string | null;
   removePreset: (id: string) => void;
+  /** Puts a deleted preset back at its old place (the undo of `removePreset`). */
+  restorePreset: (preset: Preset, index: number) => void;
   rename: (name: string) => void;
   /** Applies a change to the sheet of the active character. */
   editSheet: (fn: (sheet: Sheet) => Sheet) => void;
@@ -175,6 +178,11 @@ export const useCharacterStore = create<CharacterStore>((set, get) => {
       return null;
     },
     removePreset: (id) => update({ presets: get().character.presets.filter((p) => p.id !== id) }),
+    restorePreset: (preset, index) => {
+      const list = get().character.presets;
+      if (list.length >= PRESET_LIMIT || list.some((p) => p.id === preset.id)) return;
+      update({ presets: [...list.slice(0, index), preset, ...list.slice(index)] });
+    },
     rename: (name) => update({ name: name.slice(0, 80) }),
     editSheet: (fn) => update({ sheet: fn(get().character.sheet) }),
     editInventory: (fn) => update({ inventory: fn(get().character.inventory) }),

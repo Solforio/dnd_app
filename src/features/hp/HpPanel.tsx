@@ -23,7 +23,7 @@ export function HpManage() {
   };
 
   return (
-    <FoldCard id="hp-manage" title="Gestione PF" summary="PF temporanei, massimi, salita di livello, riposo lungo" defaultOpen={false}>
+    <FoldCard id="hp-manage" title="Gestione PF" summary="PF temporanei, livello, riposo" defaultOpen={false}>
       <div className="row" style={{ alignItems: 'flex-end' }}>
         <div className="field">
           <label htmlFor={amountId}>Quantità</label>

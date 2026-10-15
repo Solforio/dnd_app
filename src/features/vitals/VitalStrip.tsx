@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useCharacterStore } from '../../data/characterStore';
 import { formatNumber } from '../../domain/format/number';
@@ -21,7 +21,22 @@ export function VitalStrip() {
   const { damage, heal } = useCharacterStore.getState();
   const [amount, setAmount] = useState('');
   const id = useId();
+  const strip = useRef<HTMLElement>(null);
   const { hp, sheet } = character;
+
+  // Whatever sticks below this strip (the roll strip on Scheda and Combattimento) needs its height.
+  useEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const publish = () => document.documentElement.style.setProperty('--vital-h', `${el.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--vital-h');
+    };
+  }, []);
 
   const n = Math.max(0, Math.min(HP_LIMIT * 10, Math.trunc(Number(amount) || 0)));
   const apply = (fn: (v: number) => void) => {
@@ -32,7 +47,7 @@ export function VitalStrip() {
   const scale = hp.max + hp.temp;
 
   return (
-    <section className="vital-strip" aria-label="Personaggio e punti ferita">
+    <section ref={strip} className="vital-strip" aria-label="Personaggio e punti ferita">
       <div className="vital-main">
         <div className="vital-who">
           <CharacterAvatar characterId={character.id} name={character.name} size={36} />
@@ -50,7 +65,7 @@ export function VitalStrip() {
             <span className="small muted"> PF</span>
           </span>
           <div className="hp-bar" role="meter" aria-label="PF attuali" aria-valuemin={0} aria-valuemax={hp.max} aria-valuenow={hp.cur}>
-            <span className={`cur${hp.cur <= hp.max / 4 ? ' low' : ''}`} style={{ width: `${(hp.cur / scale) * 100}%` }} />
+            <span className={`cur${hp.cur <= hp.max / 4 ? ' low' : hp.cur <= hp.max / 2 ? ' mid' : ''}`} style={{ width: `${(hp.cur / scale) * 100}%` }} />
             <span className="temp" style={{ width: `${(hp.temp / scale) * 100}%` }} />
           </div>
         </div>
@@ -59,13 +74,20 @@ export function VitalStrip() {
           <label htmlFor={id} className="visually-hidden">
             Quantità di PF
           </label>
-          <input id={id} type="number" inputMode="numeric" min={0} placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <input id={id} type="number" inputMode="numeric" min={0} placeholder="Valore" value={amount} onChange={(e) => setAmount(e.target.value)} />
           <button type="button" className="danger" disabled={n <= 0} onClick={() => apply(damage)}>
             Danno
           </button>
           <button type="button" className="heal" disabled={n <= 0} onClick={() => apply(heal)}>
             Cura
           </button>
+          <span className="vital-steps" role="group" aria-label="Variazioni rapide">
+            {[-5, -1, 1, 5].map((d) => (
+              <button key={d} type="button" className="ghost" onClick={() => (d < 0 ? damage(-d) : heal(d))}>
+                {d < 0 ? `−${-d}` : `+${d}`}
+              </button>
+            ))}
+          </span>
         </div>
 
         <div className="vital-badges">
