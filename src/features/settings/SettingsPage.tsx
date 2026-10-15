@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { resetFoldState } from '../../components/foldStorage';
 import { clearImages, imageUsage } from '../../data/imageStore';
+import { promptInstall, useInstallHint } from '../../data/installPrompt';
 import { requestSignOut, useSession } from '../../data/session';
 import { useSettings } from '../../data/settingsStore';
 import { useSpellDialog } from '../../data/spellDialog';
@@ -206,6 +207,36 @@ function AccountSection() {
   );
 }
 
+/** Install the app on the home screen: a button where the browser offers it, the how-to on iOS. */
+function InstallSection() {
+  const hint = useInstallHint();
+  return (
+    <section className="card stack" aria-labelledby="set-install">
+      <h2 id="set-install">App</h2>
+      {hint === 'installed' && <p className="small muted">Stai usando D&amp;D Pocket come app installata.</p>}
+      {hint === 'prompt' && (
+        <Row title="Installa l’app" hint="Si apre a schermo intero, dalla schermata Home, e funziona anche senza connessione.">
+          <button type="button" className="primary" onClick={() => void promptInstall()}>
+            Installa
+          </button>
+        </Row>
+      )}
+      {hint === 'ios' && (
+        <p className="small">
+          Per installarla su iPhone o iPad apri il menu <strong>Condividi</strong> di Safari e scegli <strong>Aggiungi alla schermata Home</strong>.
+          Installata, il telefono non cancella i tuoi dati se non la usi per un po’.
+        </p>
+      )}
+      {hint === 'none' && (
+        <p className="small muted">
+          Se il tuo browser lo permette, il menu ha la voce «Installa app» o «Aggiungi alla schermata Home». L’app funziona anche senza connessione
+          dopo la prima apertura.
+        </p>
+      )}
+    </section>
+  );
+}
+
 /** The preferences of this device, and the credits and licences of what the app contains. */
 export function SettingsPage() {
   const { settings, update, reset } = useSettings();
@@ -272,6 +303,8 @@ export function SettingsPage() {
 
       <StorageSection />
       <AccountSection />
+
+      <InstallSection />
 
       <section className="card stack" aria-labelledby="set-reset">
         <h2 id="set-reset">Ripristino</h2>

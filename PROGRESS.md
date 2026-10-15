@@ -358,9 +358,18 @@ On Scheda and Combattimento the last-roll card (total, formula, Normale / Vantag
 - **The Gruppo tab opens the party used last** (`src/data/lastParty.ts`, key `dnd-companion:last-party`): remembered when a party page has loaded, forgotten when the party is left, deleted or gone. Only when signed in; the «← I miei gruppi» link and the URL `#/gruppo` still show the list.
 - **Swipe between sections** (`src/components/swipe.ts`, used by `TabNav`): a quick sideways swipe (at least 80 px, clearly more horizontal than vertical, under 0.7 s) goes to the next or previous section in the tab order Tiri, Scheda, Combat, Zaino, Grimorio, Bestiario, Mappe, Gruppo. It is ignored when it starts on a field, a map, a dialog or a sideways-scrolling element, when a dialog is open, and on pages that are not a section root (a map, settings, characters). Checked with synthetic touch events (left, right, diagonal, on a field); not tried on a real phone. No animation of the page following the finger.
 
-## PWA: thinking (2026-10-15), nothing built yet
+## PWA: built (2026-10-15); the plan below stays as the reasoning
 
 **What exists**: a static site on GitHub Pages under `/dnd_app/` (`VITE_BASE` from the workflow), `HashRouter` (no server-side routing to worry about), Firestore with a persistent local cache (own data already works offline once loaded), an IndexedDB store for map images and portraits, `navigator.storage.persist()` in Settings, `viewport-fit=cover` and `theme-color`. **Missing**: web manifest, PNG icons, service worker, install prompt. Build: main chunk 1,2 MB (366 kB gzip), `exportPdf` 403 kB and `fontkit` 711 kB lazy, `public/srd/monsters.json` 451 kB and `spells.json` 360 kB fetched when their tab opens.
+
+**What was built** (the owner left the three decisions to me: dependency yes, icons from the favicon, update by notice)
+- Dev dependencies: `vite-plugin-pwa` 2.0.0 (Vite 8 is in its peer range), `workbox-build`, `workbox-window`, `sharp` (only for `scripts/build-icons.mjs`; the PNGs are committed).
+- `vite.config.ts`: `VitePWA` with `registerType: 'prompt'`, manifest (`D&D Pocket`, standalone, portrait, `#1b1a2e`, relative icon paths so `/dnd_app/` works), Workbox precache of every built file (JS including the lazy PDF chunks, CSS, fonts, icons, HTML; 18 files, about 2,6 MB), `public/srd/*.json` with StaleWhileRevalidate in the `srd-data` cache, `cleanupOutdatedCaches`. Firebase traffic is not cached by the worker.
+- `public/`: `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` (d20 at 60 % for the safe zone), `apple-touch-icon.png`; `index.html` has the iOS meta tags (status bar `black`, so the header is not drawn under it).
+- `src/features/pwa/UpdatePrompt.tsx`: registers the worker, checks for a new version every hour and when the page becomes visible, shows «C’è una nuova versione · Aggiorna / Dopo» and once «L’app è pronta anche senza connessione». `src/data/installPrompt.ts` + `src/domain/install.ts` (tests): Settings → «App» has an Installa button where the browser offers it (Chrome, Edge) and the «Condividi → Aggiungi alla schermata Home» how-to on iOS.
+- **Checked** with `VITE_BASE=/dnd_app/ npm run build` and `vite preview` (same env for the preview): manifest scope `/dnd_app/`, worker activated, 18 precached files, SRD list cached after a reload, then the server stopped and the page reloaded: shell, Tiri, Zaino and the Bestiario list (40 rows) all work offline. In Git Bash on Windows put `MSYS_NO_PATHCONV=1` before `VITE_BASE=/dnd_app/`, or the path becomes `C:/Program Files/Git/dnd_app/`.
+- **Not checked**: a real install on Android and iOS, a real update cycle (a second deploy while one is installed), the Lighthouse PWA audit, the Firestore offline cache after the worker (own data should still sync as before).
+- **Still to do**: the Faerûn bulk import (I1); an optional install hint outside Settings.
 
 **Plan, in order (each step usable on its own)**
 1. **Manifest and icons** (S, no dependency): `manifest.webmanifest` with `name` «D&D Pocket», `short_name`, `start_url` and `scope` `./` (so it works under `/dnd_app/`), `display: standalone`, `theme_color` and `background_color` `#1b1a2e`, icons 192 and 512 plus a maskable one and an `apple-touch-icon` 180, all drawn from `favicon.svg` (gold d20 on indigo). The PNGs need a one-off render (a script with a dev dependency such as `sharp`, or by hand from the browser).
@@ -377,7 +386,7 @@ On Scheda and Combattimento the last-roll card (total, formula, Normale / Vantag
 ## Dependencies
 
 Runtime: react, react-dom, zustand. Dev: vite, @vitejs/plugin-react, typescript, vitest, eslint (+ @eslint/js, typescript-eslint, react-hooks, react-refresh, globals), @types/*.
-Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Phase 2 and 3 added nothing. Ask before adding anything else. The PDF export added pdf-lib and @pdf-lib/fontkit (lazy-loaded).
+Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), dev: firebase-tools, @firebase/rules-unit-testing. Phase 2 and 3 added nothing. Ask before adding anything else. The PDF export added pdf-lib and @pdf-lib/fontkit (lazy-loaded). The PWA added dev dependencies `vite-plugin-pwa`, `workbox-build`, `workbox-window` and `sharp` (icons script only), approved by the owner on 2026-10-15.
 
 ## Open questions
 
@@ -387,7 +396,7 @@ Phase 1 added: firebase, react-router (v8, `HashRouter` from `react-router`), de
 
 1. Follow the "Chosen order" in the Ideas section (starts with I3, the 3D dice, the same item as the Backlog entry below).
 2. User tries maps on https://solforio.github.io/dnd_app/ (personal, then a party map with a friend).
-3. Phase 5 (notes) and the PWA phase are still planned; the ideas above are interleaved with them as the user prefers.
+3. Phase 5 (notes) is still planned (the PWA phase is done); the ideas above are interleaved with them as the user prefers.
 
 ## Backlog (user requests, 2026-10-13)
 

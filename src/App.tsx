@@ -12,6 +12,8 @@ import { UploadDialog } from './features/account/UploadDialog';
 import { CharacterBar } from './features/character/CharacterBar';
 import { CharactersPage } from './features/character/CharactersPage';
 import { SpellDialog, SpellNotice } from './features/grimoire/SpellDialog';
+import { initInstallPrompt } from './data/installPrompt';
+import { UpdatePrompt } from './features/pwa/UpdatePrompt';
 import { BackupBanner } from './features/backup/BackupBanner';
 import { FirstRunCard } from './features/onboarding/FirstRunCard';
 import { SettingsPage } from './features/settings/SettingsPage';
@@ -108,6 +110,7 @@ export function App() {
   useClassTheme();
   useEffect(() => initTheme(), []);
   useEffect(() => initSettings(), []);
+  useEffect(() => initInstallPrompt(), []);
   const phase = useSession((s) => s.phase);
   const warning = useSession((s) => s.warning);
   const writeError = useSession((s) => s.writeError);
@@ -153,6 +156,7 @@ export function App() {
           </p>
         </main>
       )}
+      <UpdatePrompt />
       <SpellDialog />
       <MonsterDialog />
       <SpellNotice />
